@@ -2,7 +2,7 @@
   "go": "snuske/",
   "tapUrl": "https://tap.samdw.ca/",
   "supabase": {
-    "url": "",
-    "key": ""
+    "url": "https://tabqnqskcidqnbqfbesk.supabase.co",
+    "key": "sb_publishable_nKm6JVd3iJwlmlwGFW_xQA_aTpdKZ8u"
   }
 }
