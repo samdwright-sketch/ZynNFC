@@ -18,7 +18,7 @@ A tiny mobile browser game: steer a dude around with a touch joystick, eat snus 
 | `game.js` | All game logic and drawing (no libraries, no build step) |
 | `manifest.webmanifest`, `icon*.png`, `icon.svg` | Home-screen icon and "Add to Home Screen" support |
 
-Total size is about 80 KB, so it opens almost instantly after an NFC tap.
+Total size is under 100 KB, so it opens almost instantly after an NFC tap.
 
 ## Run locally
 
@@ -29,9 +29,17 @@ python3 -m http.server 8000
 # then visit http://localhost:8000
 ```
 
-## Hosting
+## Hosting (GitHub Pages)
 
-It's a plain static site: any static host works by pointing it at the repo root with no build command.
+Live URL: **https://samdwright-sketch.github.io/ZynNFC/**
+
+`.github/workflows/pages.yml` publishes the game on every push to `main` (and the current dev branch). One-time setup:
+
+1. **Settings → General → Danger Zone → Change visibility → Public** (Pages on a free plan needs a public repo).
+2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+3. **Actions tab → "Deploy Snuske to GitHub Pages" → Run workflow** (or just push a commit).
+
+After that, every push redeploys automatically. It's a plain static site, so any other static host also works with no build command.
 
 ## NFC tags
 
