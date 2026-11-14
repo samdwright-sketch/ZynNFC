@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0d1726">
+<title>Tag Admin</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0d1726; --panel: #15253b; --panel2: #1c2f4a; --ink: #f4efe6; --muted: #8fa3bd;
+    --mint: #5fd3b0; --mint-dark: #2f9c7e; --red: #e04f5f; --gold: #ffcc4d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 40px);
+  }
+  main { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; font-weight: 900; }
+  .sub { color: var(--muted); margin: 0 0 22px; font-size: 14px; }
+  .card { background: var(--panel); border-radius: 18px; padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; letter-spacing: .14em; color: var(--muted); margin: 0 0 12px; font-weight: 800; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; font-weight: 700; }
+  input[type=text], input[type=password] {
+    width: 100%; font: inherit; font-size: 17px; color: var(--ink); background: var(--bg);
+    border: 2px solid var(--panel2); border-radius: 12px; padding: 12px 14px; outline: none;
+  }
+  input:focus { border-color: var(--mint); }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row > input { flex: 1; }
+  button {
+    font: inherit; font-weight: 800; border: 0; border-radius: 12px; padding: 12px 18px; cursor: pointer;
+    background: var(--mint); color: #08241c; white-space: nowrap;
+  }
+  button.ghost { background: var(--panel2); color: var(--ink); }
+  button.danger { background: transparent; color: var(--red); padding: 8px 10px; }
+  button.small { padding: 8px 12px; font-size: 14px; }
+  button:disabled { opacity: .5; }
+  .check { display: flex; gap: 8px; align-items: center; margin: 12px 0 14px; font-size: 14px; color: var(--muted); }
+  .msg { min-height: 20px; margin-top: 10px; font-size: 14px; color: var(--red); }
+  .msg.ok { color: var(--mint); }
+  .result { background: var(--panel2); border-radius: 14px; padding: 14px; margin-top: 14px; }
+  .result .name { font-weight: 900; font-size: 18px; }
+  .url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; color: var(--gold);
+    word-break: break-all; background: var(--bg); padding: 10px 12px; border-radius: 10px; margin: 10px 0; user-select: all; }
+  .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+  .tags { list-style: none; padding: 0; margin: 0; }
+  .tags li { border-top: 1px solid var(--panel2); padding: 12px 0; }
+  .tags li:first-child { border-top: 0; padding-top: 0; }
+  .tags .top { display: flex; align-items: baseline; gap: 8px; }
+  .tags .n { font-weight: 800; flex: 1; }
+  .tags .meta { color: var(--muted); font-size: 13px; }
+  .tags .actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tags .url { margin: 6px 0 0; font-size: 12px; padding: 6px 8px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tag admin</h1>
+  <p class="sub">Create a URL for each NFC sticker. Each URL is tied to one person's name on the leaderboard.</p>
+
+  <section class="card" id="loading"><p class="muted">Connecting...</p></section>
+
+  <section class="card hidden" id="offline">
+    <h2>NOT CONNECTED</h2>
+    <p class="muted">The leaderboard database isn't set up yet. Add the Supabase URL and key to <code>config.json</code> in the repo.</p>
+  </section>
+
+  <section class="card hidden" id="setup">
+    <h2>FIRST-TIME SETUP</h2>
+    <p class="muted">Choose an admin PIN. Use 6+ characters; a short phrase is best. Anyone with the PIN can create and delete tags, so keep it private.</p>
+    <label for="newPin">New PIN</label>
+    <input type="password" id="newPin" autocomplete="new-password">
+    <label for="newPin2" style="margin-top:12px">Confirm PIN</label>
+    <input type="password" id="newPin2" autocomplete="new-password">
+    <div style="margin-top:14px"><button id="setupBtn">Set PIN</button></div>
+    <div class="msg" id="setupMsg"></div>
+  </section>
+
+  <section class="card hidden" id="login">
+    <h2>UNLOCK</h2>
+    <label for="pin">Admin PIN</label>
+    <input type="password" id="pin" autocomplete="current-password">
+    <label class="check"><input type="checkbox" id="remember" checked> Remember on this device</label>
+    <button id="loginBtn">Unlock</button>
+    <div class="msg" id="loginMsg"></div>
+  </section>
+
+  <div class="hidden" id="panel">
+    <section class="card">
+      <h2>NEW TAG</h2>
+      <label for="name">Name for the leaderboard</label>
+      <div class="row">
+        <input type="text" id="name" maxlength="24" autocomplete="off" placeholder="e.g. Sam">
+        <button id="createBtn">Create</button>
+      </div>
+      <div class="msg" id="createMsg"></div>
+      <div class="result hidden" id="result">
+        <div class="name" id="resName"></div>
+        <div class="url" id="resUrl"></div>
+        <button id="resCopy">Copy URL</button>
+        <ol class="steps">
+          <li>Open <b>NFC Tools</b> → Write → Add a record → <b>URL/URI</b>.</li>
+          <li>Paste the URL, tap Write, hold the phone to the sticker.</li>
+          <li>Tap the sticker to test it.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0">ALL TAGS (<span id="count">0</span>)</h2>
+        <button class="ghost small" id="lockBtn">Lock</button>
+      </div>
+      <ul class="tags" id="tags"></ul>
+    </section>
+  </div>
+</main>
+
+<script src="../shared.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const PIN_KEY = 'samdw.adminPin';
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* ignore */ } },
+  };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const only = (id) => ['loading', 'offline', 'setup', 'login', 'panel'].forEach((s) => $(s).classList.toggle('hidden', s !== id));
+  const msg = (id, text, ok) => { const m = $(id); m.textContent = text || ''; m.classList.toggle('ok', !!ok); };
+
+  let pin = null;
+  let tapBase = Samdw.root;
+
+  const tagUrl = (tag) => `${tapBase}?t=${tag}`;
+
+  async function copy(text, btn) {
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
+    }
+    const old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = old; }, 1200);
+  }
+
+  function renderTags(tags) {
+    $('count').textContent = tags.length;
+    $('tags').innerHTML = tags.length ? tags.map((t) => `
+      <li data-tag="${esc(t.tag)}" data-name="${esc(t.name)}">
+        <div class="top"><span class="n">${esc(t.name)}</span>
+          <span class="meta">best ${t.best ?? '-'} · ${t.plays} play${t.plays === 1 ? '' : 's'}</span></div>
+        <div class="url">${esc(tagUrl(t.tag))}</div>
+        <div class="actions">
+          <button class="ghost small" data-act="copy">Copy URL</button>
+          <button class="ghost small" data-act="rename">Rename</button>
+          <button class="danger small" data-act="delete">Delete</button>
+        </div>
+      </li>`).join('') : '<li class="muted">No tags yet. Create one above.</li>';
+  }
+
+  async function refresh() {
+    const r = await Samdw.rpc('admin_list_tags', { p_pin: pin });
+    if (r.error) throw new Error(r.error);
+    renderTags(r.tags);
+  }
+
+  async function unlock(p, remember) {
+    pin = p;
+    try {
+      await refresh();
+      if (remember) store.set(PIN_KEY, p);
+      only('panel');
+      return null;
+    } catch (e) {
+      pin = null;
+      return e.message;
+    }
+  }
+
+  $('setupBtn').addEventListener('click', async () => {
+    const a = $('newPin').value, b = $('newPin2').value;
+    if (a !== b) return msg('setupMsg', "PINs don't match.");
+    $('setupBtn').disabled = true;
+    try {
+      const r = await Samdw.rpc('admin_setup', { p_pin: a });
+      if (r.error) return msg('setupMsg', r.error);
+      const err = await unlock(a, true);
+      if (err) msg('setupMsg', err);
+    } catch { msg('setupMsg', 'Network error. Try again.'); }
+    finally { $('setupBtn').disabled = false; }
+  });
+
+  async function doLogin() {
+    $('loginBtn').disabled = true;
+    try {
+      const err = await unlock($('pin').value, $('remember').checked);
+      if (err) msg('loginMsg', err === 'HTTP 404' ? 'Database functions missing. Run supabase/schema.sql.' : err);
+    } finally { $('loginBtn').disabled = false; }
+  }
+  $('loginBtn').addEventListener('click', doLogin);
+  $('pin').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+  async function create() {
+    const name = $('name').value.trim();
+    if (!name) return msg('createMsg', 'Enter a name.');
+    $('createBtn').disabled = true; msg('createMsg', '');
+    try {
+      const r = await Samdw.rpc('admin_create_tag', { p_pin: pin, p_name: name });
+      if (r.error) return msg('createMsg', r.error);
+      $('resName').textContent = r.name;
+      $('resUrl').textContent = tagUrl(r.tag);
+      $('result').classList.remove('hidden');
+      $('name').value = '';
+      await refresh();
+    } catch { msg('createMsg', 'Network error. Try again.'); }
+    finally { $('createBtn').disabled = false; }
+  }
+  $('createBtn').addEventListener('click', create);
+  $('name').addEventListener('keydown', (e) => { if (e.key === 'Enter') create(); });
+  $('resCopy').addEventListener('click', (e) => copy($('resUrl').textContent, e.target));
+
+  $('tags').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    const li = btn.closest('li'); const tag = li.dataset.tag; const name = li.dataset.name;
+    if (btn.dataset.act === 'copy') return copy(tagUrl(tag), btn);
+    if (btn.dataset.act === 'rename') {
+      const n = prompt(`New name for "${name}"`, name);
+      if (!n || n.trim() === name) return;
+      const r = await Samdw.rpc('admin_rename_tag', { p_pin: pin, p_tag: tag, p_name: n });
+      if (r.error) alert(r.error);
+      return refresh();
+    }
+    if (btn.dataset.act === 'delete') {
+      if (!confirm(`Delete "${name}" and all their scores? Their sticker will stop logging scores.`)) return;
+      const r = await Samdw.rpc('admin_delete_tag', { p_pin: pin, p_tag: tag });
+      if (r.error) alert(r.error);
+      return refresh();
+    }
+  });
+
+  $('lockBtn').addEventListener('click', () => {
+    pin = null; store.set(PIN_KEY, null); $('pin').value = ''; msg('loginMsg', ''); only('login');
+  });
+
+  (async () => {
+    const cfg = await Samdw.config;
+    if (cfg && typeof cfg.tapUrl === 'string' && /^https?:\/\//.test(cfg.tapUrl)) tapBase = cfg.tapUrl.replace(/\/?$/, '/');
+    if (!(await Samdw.online)) return only('offline');
+    try {
+      const s = await Samdw.rpc('admin_status');
+      if (!s.setup) return only('setup');
+    } catch { return only('offline'); }
+    const saved = store.get(PIN_KEY);
+    if (saved && !(await unlock(saved, true))) return;
+    only('login');
+  })();
+})();
+</script>
+</body>
+</html>

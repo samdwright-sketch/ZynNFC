@@ -277,6 +277,7 @@
     show(el.paused, false); show(el.over, false); show(el.hud, false); show(el.menu, true);
     el.menuBest.textContent = S.best;
     layout(false); reset(true);
+    loadBoard($('menuBoard'), 5);
   }
 
   const WALL_LINES = [['Faceplant!', 'You ran into the wall.'], ['Bonk!', 'Walls don\'t taste like pouches.'], ['Splat!', 'That wall came out of nowhere.']];
@@ -298,6 +299,7 @@
     el.finalScore.textContent = S.score; el.finalBest.textContent = S.best;
     show(el.newBest, isBest && S.score > 0);
     show(el.hud, false); show(el.over, true);
+    submitScore(S.score);
   }
 
   $('playBtn').addEventListener('click', startGame);
@@ -310,7 +312,7 @@
     if (!muted) sfx.click();
   });
   $('shareBtn').addEventListener('click', async () => {
-    const url = location.href.split('#')[0];
+    const url = location.origin + location.pathname; // never includes the tag
     const text = `I ate ${S.score} pouch${S.score === 1 ? '' : 'es'} in Snuske. Beat that.`;
     try {
       if (navigator.share) { await navigator.share({ title: 'Snuske', text, url }); return; }
@@ -646,10 +648,72 @@
     requestAnimationFrame(frame);
   }
 
+  // ---------- Online leaderboard (optional; the game works without it) ----------
+  const LB = window.Samdw || null;
+  const GAME_ID = 'snuske';
+  let playerName = null;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function renderBoard(box, rows) {
+    const ol = box.querySelector('ol');
+    ol.innerHTML = rows && rows.length
+      ? rows.map((r) => `<li class="${r.me ? 'me' : ''}"><span class="r">${r.rank}</span><span class="n">${esc(r.name)}</span><span class="s">${r.best}</span></li>`).join('')
+      : '<li class="empty">No scores yet. Be the first!</li>';
+    show(box, true);
+  }
+  async function loadBoard(box, limit) {
+    if (!LB || !(await LB.online)) return;
+    try { renderBoard(box, await LB.rpc('leaderboard', { p_game: GAME_ID, p_limit: limit, p_tag: LB.tag })); } catch { /* offline */ }
+  }
+  function renderWho() {
+    const who = $('menuWho');
+    if (LB.tag && playerName) {
+      who.innerHTML = `Playing as <b>${esc(playerName)}</b><button type="button" id="notMe">not you?</button>`;
+      $('notMe').addEventListener('click', () => { LB.forgetTag(); playerName = null; renderWho(); loadBoard($('menuBoard'), 5); });
+    } else {
+      who.textContent = 'Tap a sticker to join the leaderboard';
+    }
+  }
+  async function initOnline() {
+    if (!LB || !(await LB.online)) return;
+    if (LB.tag) {
+      try {
+        const p = await LB.rpc('player', { p_tag: LB.tag, p_game: GAME_ID });
+        if (p && p.name) {
+          playerName = p.name;
+          if (p.best > S.best) { S.best = p.best; store.set('snuske.best', String(S.best)); el.menuBest.textContent = S.best; }
+        } else {
+          LB.forgetTag(); // tag was deleted or never existed
+        }
+      } catch { /* offline: keep the tag, try again next load */ }
+    }
+    renderWho();
+    loadBoard($('menuBoard'), 5);
+  }
+  async function submitScore(score) {
+    const line = $('rankLine'), board = $('overBoard');
+    line.textContent = ''; line.style.color = '';
+    show(board, false);
+    if (!LB || !(await LB.online)) return;
+    if (!LB.tag || !playerName) {
+      line.textContent = 'Tap a sticker to get on the leaderboard'; line.style.color = 'var(--muted)';
+    } else if (score > 0) {
+      line.textContent = 'Saving...';
+      try {
+        const r = await LB.rpc('submit_score', { p_tag: LB.tag, p_score: score, p_game: GAME_ID });
+        line.textContent = r.error ? '' : (r.new_best ? `New personal best! #${r.rank} of ${r.total}` : `You're #${r.rank} of ${r.total}`);
+      } catch {
+        line.textContent = 'Offline: score not saved'; line.style.color = 'var(--muted)';
+      }
+    }
+    loadBoard(board, 5);
+  }
+
   // ---------- Boot ----------
   renderMute();
   el.menuBest.textContent = S.best;
   layout(false);
   reset(true);
   requestAnimationFrame(frame);
+  initOnline();
 })();

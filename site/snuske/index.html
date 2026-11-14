@@ -60,12 +60,15 @@
 
   /* Screens */
   .screen {
-    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
     padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
     text-align: center; background: rgba(13, 23, 38, .72);
     -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
     animation: fade .25s ease-out;
   }
+  .screen > :first-child { margin-top: auto; }
+  .screen > :last-child { margin-bottom: auto; }
   @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
   .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
   .logo h1 {
@@ -73,7 +76,7 @@
     color: var(--ink); text-shadow: 0 5px 0 var(--mint-dark), 0 10px 24px rgba(0,0,0,.45);
   }
   .logo svg { width: clamp(40px, 12vw, 60px); height: auto; transform: rotate(-14deg); filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
-  .tag { color: var(--muted); font-size: 16px; margin: 14px 0 30px; max-width: 300px; line-height: 1.4; }
+  .tag { color: var(--muted); font-size: 16px; margin: 12px 0 26px; max-width: 300px; line-height: 1.4; }
   .btn {
     border: 0; border-radius: 18px; padding: 18px 44px; min-width: 220px; cursor: pointer;
     font: inherit; font-size: 22px; font-weight: 900; letter-spacing: .02em;
@@ -97,6 +100,20 @@
     animation: pop .5s cubic-bezier(.2,1.6,.4,1);
   }
   @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
+  .who { margin-top: 14px; font-size: 14px; color: var(--muted); min-height: 18px; }
+  .who b { color: var(--ink); }
+  .who button { background: none; border: 0; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; padding: 0 0 0 6px; opacity: .7; }
+  .rank-line { min-height: 20px; margin: -10px 0 22px; color: var(--mint); font-weight: 800; font-size: 15px; }
+  .board { list-style: none; margin: 18px 0 0; padding: 12px 14px; width: min(320px, 100%); background: var(--panel); border-radius: 16px; text-align: left; }
+  .board h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .18em; color: var(--muted); font-weight: 800; }
+  .board ol { list-style: none; margin: 0; padding: 0; }
+  .board li { display: flex; align-items: center; gap: 10px; padding: 6px 4px; font-size: 15px; border-radius: 8px; }
+  .board li .r { width: 22px; color: var(--muted); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .board li .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board li .s { font-weight: 900; font-variant-numeric: tabular-nums; }
+  .board li.me { background: rgba(95, 211, 176, .14); }
+  .board li.me .n { color: var(--mint); font-weight: 800; }
+  .board .empty { color: var(--muted); font-size: 14px; padding: 4px; }
   #toast {
     position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 30px); transform: translateX(-50%);
     background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 14px;
@@ -128,6 +145,8 @@
   <p class="tag">Eat the pouches. Get longer. Don't bite yourself.</p>
   <button class="btn" id="playBtn">PLAY</button>
   <div class="best-line">BEST <b id="menuBest">0</b></div>
+  <div class="who" id="menuWho"></div>
+  <div class="board hidden" id="menuBoard"><h3>LEADERBOARD</h3><ol></ol></div>
   <div class="help">Drag anywhere to steer</div>
 </section>
 
@@ -144,13 +163,16 @@
   <div id="newBest" class="badge hidden">NEW BEST</div>
   <div class="big-score" id="finalScore">0</div>
   <div class="big-label">POUCHES</div>
+  <div class="rank-line" id="rankLine"></div>
   <button class="btn" id="againBtn">PLAY AGAIN</button>
   <button class="btn ghost" id="shareBtn">SHARE SCORE</button>
   <div class="best-line">BEST <b id="finalBest">0</b></div>
+  <div class="board hidden" id="overBoard"><h3>LEADERBOARD</h3><ol></ol></div>
 </section>
 
 <div id="toast"></div>
 
+<script src="../shared.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
