@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Snuske</title>
+<meta name="description" content="Snuske: eat the pouches, grow longer, don't bite yourself.">
+<meta name="theme-color" content="#0d1726">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Snuske">
+<meta property="og:title" content="Snuske">
+<meta property="og:description" content="Eat the pouches. Get longer. Don't bite yourself.">
+<meta property="og:image" content="icon-512.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0d1726;
+    --panel: #15253b;
+    --ink: #f4efe6;
+    --muted: #8fa3bd;
+    --mint: #5fd3b0;
+    --mint-dark: #2f9c7e;
+    --red: #e04f5f;
+    --gold: #ffcc4d;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
+  canvas { position: fixed; inset: 0; display: block; }
+  #safe { position: fixed; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+  /* HUD */
+  #hud {
+    position: fixed; left: 0; right: 0; top: 0;
+    padding: calc(env(safe-area-inset-top) + 10px) 14px 0;
+    display: flex; align-items: center; gap: 10px; pointer-events: none;
+  }
+  .stat { display: flex; flex-direction: column; line-height: 1; }
+  .stat small { font-size: 10px; letter-spacing: .14em; color: var(--muted); font-weight: 700; }
+  .stat b { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; margin-top: 3px; }
+  .stat.right { text-align: right; }
+  .stat { min-width: 64px; }
+  .hud-mid { margin: 0 auto; display: flex; gap: 10px; }
+  .hud-btn {
+    pointer-events: auto; width: 40px; height: 40px; border-radius: 12px; border: 0;
+    background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer;
+  }
+  .hud-btn svg { width: 20px; height: 20px; }
+  .hidden { display: none !important; }
+
+  /* Screens */
+  .screen {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+    text-align: center; background: rgba(13, 23, 38, .72);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    animation: fade .25s ease-out;
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .logo h1 {
+    margin: 0; font-size: clamp(52px, 17vw, 84px); font-weight: 900; letter-spacing: -.02em; line-height: .9;
+    color: var(--ink); text-shadow: 0 5px 0 var(--mint-dark), 0 10px 24px rgba(0,0,0,.45);
+  }
+  .logo svg { width: clamp(40px, 12vw, 60px); height: auto; transform: rotate(-14deg); filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
+  .tag { color: var(--muted); font-size: 16px; margin: 14px 0 30px; max-width: 300px; line-height: 1.4; }
+  .btn {
+    border: 0; border-radius: 18px; padding: 18px 44px; min-width: 220px; cursor: pointer;
+    font: inherit; font-size: 22px; font-weight: 900; letter-spacing: .02em;
+    background: var(--mint); color: #08241c; box-shadow: 0 6px 0 var(--mint-dark);
+    transition: transform .08s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--mint-dark); }
+  .btn.ghost { background: var(--panel); color: var(--ink); box-shadow: 0 6px 0 #0a1320; font-size: 17px; padding: 14px 30px; margin-top: 16px; }
+  .btn.ghost:active { box-shadow: 0 2px 0 #0a1320; }
+  .best-line { margin-top: 26px; color: var(--muted); font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+  .best-line b { color: var(--gold); font-size: 18px; }
+  .help { margin-top: 10px; color: var(--muted); font-size: 13px; opacity: .8; }
+
+  .over-title { font-size: 40px; font-weight: 900; margin: 0; }
+  .over-sub { color: var(--muted); margin: 8px 0 22px; font-size: 16px; }
+  .big-score { font-size: 88px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+  .big-label { font-size: 12px; letter-spacing: .2em; color: var(--muted); font-weight: 800; margin-bottom: 24px; }
+  .badge {
+    display: inline-block; background: var(--gold); color: #3a2900; font-weight: 900; font-size: 13px;
+    letter-spacing: .12em; padding: 6px 12px; border-radius: 999px; margin-bottom: 14px;
+    animation: pop .5s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 30px); transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 14px;
+    transition: opacity .3s; opacity: 0; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="safe"></div>
+
+<div id="hud" class="hidden">
+  <div class="stat"><small>SCORE</small><b id="score">0</b></div>
+  <div class="hud-mid">
+  <button class="hud-btn" id="muteBtn" aria-label="Toggle sound"></button>
+  <button class="hud-btn" id="pauseBtn" aria-label="Pause">
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+  </button>
+  </div>
+  <div class="stat right"><small>BEST</small><b id="best">0</b></div>
+</div>
+
+<section id="menu" class="screen">
+  <div class="logo">
+    <svg viewBox="0 0 64 44" aria-hidden="true"><rect x="3" y="3" width="58" height="38" rx="14" fill="#f4efe6" stroke="#c9bfae" stroke-width="3"/><path d="M14 22h36" stroke="#ddd3c2" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6"/></svg>
+    <h1>SNUSKE</h1>
+  </div>
+  <p class="tag">Eat the pouches. Get longer. Don't bite yourself.</p>
+  <button class="btn" id="playBtn">PLAY</button>
+  <div class="best-line">BEST <b id="menuBest">0</b></div>
+  <div class="help">Drag anywhere to steer</div>
+</section>
+
+<section id="paused" class="screen hidden">
+  <h2 class="over-title">Paused</h2>
+  <p class="over-sub">Take a breather.</p>
+  <button class="btn" id="resumeBtn">RESUME</button>
+  <button class="btn ghost" id="quitBtn">MENU</button>
+</section>
+
+<section id="over" class="screen hidden">
+  <h2 class="over-title" id="overTitle">Ouch!</h2>
+  <p class="over-sub" id="overSub">You bit yourself.</p>
+  <div id="newBest" class="badge hidden">NEW BEST</div>
+  <div class="big-score" id="finalScore">0</div>
+  <div class="big-label">POUCHES</div>
+  <button class="btn" id="againBtn">PLAY AGAIN</button>
+  <button class="btn ghost" id="shareBtn">SHARE SCORE</button>
+  <div class="best-line">BEST <b id="finalBest">0</b></div>
+</section>
+
+<div id="toast"></div>
+
+<script src="game.js"></script>
+</body>
+</html>
