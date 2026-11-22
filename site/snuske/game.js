@@ -687,7 +687,7 @@
     } catch { /* offline: play anyway, scores just aren't saved */ }
     // PEEN needs a sign-in: send anyone who isn't signed in to the hub.
     // Offline (no backend) still plays, since there's nothing to sign in to.
-    if (!playerName && !(await LB.session())) { location.replace('../hub/'); return; }
+    if (!playerName) { location.replace('../hub/?next=' + encodeURIComponent(location.href)); return; }
     renderWho();
     loadBoard($('menuBoard'), 5);
   }

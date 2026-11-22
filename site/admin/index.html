@@ -57,6 +57,16 @@
   .tags .actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .tags .url { margin: 6px 0 0; font-size: 12px; padding: 6px 8px; }
   .hidden { display: none !important; }
+  .inbox { list-style: none; margin: 0; padding: 0; }
+  .inbox li { border-top: 1px solid var(--panel2); padding: 12px 0; }
+  .inbox li:first-child { border-top: 0; padding-top: 0; }
+  .inbox .top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+  .inbox .cat { color: var(--ink); font-weight: 700; }
+  .inbox .text { white-space: pre-wrap; margin: 8px 0; font-size: 15px; }
+  .inbox .att { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .inbox .att a { color: var(--ink); font-size: 13px; }
+  .inbox .att img { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; display: block; }
+  .inbox li.done { opacity: .5; }
   .muted { color: var(--muted); font-size: 14px; }
 </style>
 </head>
@@ -93,6 +103,14 @@
   </section>
 
   <div class="hidden" id="panel">
+    <section class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <h2 style="margin:0">INBOX (<span id="inboxCount">0</span> new)</h2>
+        <label style="font-size:13px"><input type="checkbox" id="showDone" style="width:auto"> show done</label>
+      </div>
+      <ul class="inbox" id="inbox"><li class="muted">Loading...</li></ul>
+    </section>
+
     <section class="card">
       <h2>NEW TAG</h2>
       <label for="name">Name for the leaderboard</label>
@@ -181,6 +199,49 @@
       </li>`).join('') : '<li class="muted">No tags yet. Create one above.</li>';
   }
 
+  // ---------- Inbox (Request / submit) ----------
+  const CATS = { '3d-print': '3D print idea', pottery: 'Pottery request', 'zyn-container': 'Zyn container',
+    'game-idea': 'New game idea', feature: 'New feature', other: 'Something else' };
+  let inbox = [];
+  function renderInbox() {
+    const showDone = $('showDone').checked;
+    const items = inbox.filter((i) => showDone || !i.done);
+    $('inboxCount').textContent = inbox.filter((i) => !i.done).length;
+    $('inbox').innerHTML = items.length ? items.map((i) => `
+      <li class="${i.done ? 'done' : ''}" data-id="${esc(i.id)}">
+        <div class="top"><span><span class="cat">${esc(CATS[i.category] || i.category)}</span> · ${esc(i.from || 'Anonymous')}</span>
+          <span>${esc(new Date(i.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}</span></div>
+        <div class="text">${esc(i.message)}</div>
+        ${i.files.length ? `<div class="att">${i.files.map((f) => !f.url ? `<span class="muted">${esc(f.name)} (missing)</span>`
+          : /^image\//.test(f.type || '') ? `<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="${esc(f.name)}"></a>`
+          : `<a href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}">${esc(f.name)}</a>`).join('')}</div>` : ''}
+        <div class="actions"><button class="ghost small" data-act="${i.done ? 'undone' : 'done'}">${i.done ? 'Mark not done' : 'Mark done'}</button></div>
+      </li>`).join('') : `<li class="muted">${inbox.length ? 'All done.' : 'Nothing yet.'}</li>`;
+  }
+  async function loadInbox() {
+    try {
+      const sb = (await Samdw.config).supabase;
+      const res = await fetch(`${sb.url.replace(/\/$/, '')}/functions/v1/admin-inbox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: sb.key, Authorization: 'Bearer ' + sb.key },
+        body: JSON.stringify({ pin }),
+      });
+      const r = await res.json();
+      if (r.error) throw new Error(r.error);
+      inbox = r.items || [];
+      renderInbox();
+    } catch (e) { $('inbox').innerHTML = `<li class="muted">Couldn't load the inbox: ${esc(e.message)}</li>`; }
+  }
+  $('showDone').addEventListener('change', renderInbox);
+  $('inbox').addEventListener('click', async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const id = b.closest('li').dataset.id;
+    const r = await Samdw.rpc('admin_mark_submission', { p_pin: pin, p_id: id, p_done: b.dataset.act === 'done' });
+    if (r.error) return alert(r.error);
+    const item = inbox.find((i) => i.id === id); if (item) item.done = b.dataset.act === 'done';
+    renderInbox();
+  });
+
   async function refresh() {
     const [r, a] = await Promise.all([
       Samdw.rpc('admin_list_tags', { p_pin: pin }),
@@ -189,6 +250,7 @@
     if (r.error) throw new Error(r.error);
     accounts = a.accounts || [];
     renderTags(r.tags);
+    loadInbox();
   }
 
   async function unlock(p, remember) {
