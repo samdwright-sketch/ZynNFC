@@ -34,7 +34,7 @@ NFC sticker ──▶ https://tap.samdw.ca/?t=k3f9x2
 | `site/admin/` | Tag admin: create, rename, delete tags; copy sticker URLs |
 | `supabase/schema.sql` | Database tables and functions (run once in Supabase) |
 | `.github/workflows/pages.yml` | Publishes `site/` to GitHub Pages on every push |
-| `.github/workflows/keepalive.yml` | Pings the database twice a week so the free plan never pauses it |
+| `.github/workflows/keepalive.yml` | Pings the database 4 times a day so the free plan never pauses it |
 
 ## Changing where taps go
 
