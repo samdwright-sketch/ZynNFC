@@ -261,7 +261,11 @@
   // people here to sign in or set up, then they go straight back).
   const nextUrl = (() => {
     try {
-      const n = new URL(new URLSearchParams(location.search).get('next') || '', location.href);
+      const raw = new URLSearchParams(location.search).get('next');
+      if (!raw) return null;
+      const n = new URL(raw, location.href);
+      // Never "next" back to the hub itself: that reloads forever.
+      if (n.hostname === location.hostname && n.pathname.startsWith('/hub')) return null;
       return /(^|\.)samdw\.ca$/.test(n.hostname) && n.protocol === 'https:' ? n.href : null;
     } catch { return null; }
   })();
