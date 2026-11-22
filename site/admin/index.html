@@ -53,6 +53,7 @@
   .tags .top { display: flex; align-items: baseline; gap: 8px; }
   .tags .n { font-weight: 800; flex: 1; }
   .tags .meta { color: var(--muted); font-size: 13px; }
+  .tags .actions select { font: inherit; font-size: 13px; padding: 6px; border-radius: 8px; background: var(--bg); color: inherit; border: 1px solid rgba(127,127,127,.35); max-width: 100%; }
   .tags .actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .tags .url { margin: 6px 0 0; font-size: 12px; padding: 6px 8px; }
   .hidden { display: none !important; }
@@ -120,6 +121,7 @@
       <ul class="tags" id="tags"></ul>
     </section>
   </div>
+  <footer data-peen-footer style="text-align:center;font-size:11px;opacity:.55;margin-top:24px">powered by PEEN-<em>IS</em></footer>
 </main>
 
 <script src="../shared.js"></script>
@@ -150,24 +152,42 @@
     const old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = old; }, 1200);
   }
 
+  let accounts = [];
+  function accountPicker() {
+    return `<select data-role="acct"><option value="">Link to account...</option>${accounts.map((a) =>
+      `<option value="${esc(a.email)}">${esc(a.name)} (${esc(a.email)})</option>`).join('')}</select>`;
+  }
+
   function renderTags(tags) {
     $('count').textContent = tags.length;
     $('tags').innerHTML = tags.length ? tags.map((t) => `
-      <li data-tag="${esc(t.tag)}" data-name="${esc(t.name)}">
-        <div class="top"><span class="n">${esc(t.name)}</span>
+      <li data-tag="${esc(t.tag)}" data-name="${esc(t.name)}"${t.revoked ? ' style="opacity:.55"' : ''}>
+        <div class="top"><span class="n">${esc(t.name)}${t.revoked ? ' (off)' : ''}</span>
           <span class="meta">best ${t.best ?? '-'} · ${t.plays} play${t.plays === 1 ? '' : 's'}</span></div>
         <div class="url">${esc(tagUrl(t.tag))}</div>
+        <div class="meta">${t.account
+          ? `Signs in as <b>${esc(t.account_name)}</b> (${esc(t.account)})`
+          : 'Not linked: the first person to sign in after tapping it claims it'}</div>
         <div class="actions">
           <button class="ghost small" data-act="copy">Copy URL</button>
           <button class="ghost small" data-act="rename">Rename</button>
+          ${t.account
+            ? '<button class="ghost small" data-act="unlink">Unlink</button>'
+            : `${accountPicker()}<button class="ghost small" data-act="link">Link</button>`}
+          <button class="ghost small" data-act="${t.revoked ? 'on' : 'off'}">${t.revoked ? 'Turn on' : 'Turn off'}</button>
+          <button class="ghost small" data-act="reissue">Replace</button>
           <button class="danger small" data-act="delete">Delete</button>
         </div>
       </li>`).join('') : '<li class="muted">No tags yet. Create one above.</li>';
   }
 
   async function refresh() {
-    const r = await Samdw.rpc('admin_list_tags', { p_pin: pin });
+    const [r, a] = await Promise.all([
+      Samdw.rpc('admin_list_tags', { p_pin: pin }),
+      Samdw.rpc('admin_list_accounts', { p_pin: pin }),
+    ]);
     if (r.error) throw new Error(r.error);
+    accounts = a.accounts || [];
     renderTags(r.tags);
   }
 
@@ -201,7 +221,7 @@
     $('loginBtn').disabled = true;
     try {
       const err = await unlock($('pin').value, $('remember').checked);
-      if (err) msg('loginMsg', err === 'HTTP 404' ? 'Database functions missing. Run supabase/schema.sql.' : err);
+      if (err) msg('loginMsg', err === 'HTTP 404' ? 'Database functions missing. Run migration 008_peen.sql in the Robotomy repo.' : err);
     } finally { $('loginBtn').disabled = false; }
   }
   $('loginBtn').addEventListener('click', doLogin);
@@ -237,8 +257,40 @@
       if (r.error) alert(r.error);
       return refresh();
     }
+    const act = async (fn, args) => {
+      const r = await Samdw.rpc(fn, { p_pin: pin, p_tag: tag, ...args });
+      if (r.error) alert(r.error);
+      return r;
+    };
+    if (btn.dataset.act === 'link') {
+      const email = li.querySelector('[data-role="acct"]').value;
+      if (!email) return alert('Pick an account first.');
+      await act('admin_link_tag', { p_email: email });
+      return refresh();
+    }
+    if (btn.dataset.act === 'unlink') {
+      if (!confirm(`Unlink "${name}"? Their scores stay on their account; the sticker stops signing them in.`)) return;
+      await act('admin_unlink_tag');
+      return refresh();
+    }
+    if (btn.dataset.act === 'off' || btn.dataset.act === 'on') {
+      if (btn.dataset.act === 'off' && !confirm(`Turn off "${name}"? It stops signing anyone in until you turn it back on.`)) return;
+      await act('admin_revoke_tag', { p_off: btn.dataset.act === 'off' });
+      return refresh();
+    }
+    if (btn.dataset.act === 'reissue') {
+      if (!confirm(`Replace "${name}"'s sticker? The old one is turned off; write the new URL to a fresh sticker.`)) return;
+      const r = await act('admin_reissue_tag');
+      if (r.tag) {
+        $('resName').textContent = r.name;
+        $('resUrl').textContent = tagUrl(r.tag);
+        $('result').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return refresh();
+    }
     if (btn.dataset.act === 'delete') {
-      if (!confirm(`Delete "${name}" and all their scores? Their sticker will stop logging scores.`)) return;
+      if (!confirm(`Delete "${name}"? Scores already on an account are kept; the rest go. The sticker stops working.`)) return;
       const r = await Samdw.rpc('admin_delete_tag', { p_pin: pin, p_tag: tag });
       if (r.error) alert(r.error);
       return refresh();

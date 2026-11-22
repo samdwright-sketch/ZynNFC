@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#efe9dd">
+<title>PEEN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* PEEN look: 90s window chrome (light grey bevels, square corners) over a
+     cream page with soft pastel rainbow glows. Static: no animation, no blur. */
+  :root {
+    color-scheme: light;
+    --page: #efe9dd; --ink: #1d1b22; --muted: #6c6775;
+    --chrome: #d9d9de; --chrome-hi: #ffffff; --chrome-lo: #8d8d96; --chrome-dk: #4a4a52;
+    --face: #f7f5f0; --bad: #c2304f;
+    --rainbow: linear-gradient(100deg, #ffd1e8, #e3d4ff 25%, #c8ecff 50%, #d2f7e6 75%, #fff2c2);
+    --bar: linear-gradient(90deg, #f7c8e0, #d9ccff 35%, #bfe6fb 65%, #d6f5e4);
+    --mono: "Space Mono", ui-monospace, Menlo, monospace;
+    --pixel: "Silkscreen", "Space Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--page); }
+  body {
+    margin: 0; min-height: 100svh; color: var(--ink); font: 14px/1.5 var(--mono);
+    background:
+      radial-gradient(40vmax 30vmax at 8% 12%, rgba(255, 196, 228, .55), transparent 70%),
+      radial-gradient(38vmax 30vmax at 95% 25%, rgba(190, 226, 255, .6), transparent 70%),
+      radial-gradient(40vmax 30vmax at 20% 95%, rgba(214, 200, 255, .55), transparent 70%),
+      radial-gradient(30vmax 24vmax at 90% 90%, rgba(212, 247, 228, .6), transparent 70%),
+      var(--page);
+    background-attachment: fixed;
+  }
+  /* faint layout grid, like the reference sheets */
+  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .35;
+    background-image: linear-gradient(var(--chrome) 1px, transparent 1px), linear-gradient(90deg, var(--chrome) 1px, transparent 1px);
+    background-size: 32px 32px; }
+  main { position: relative; isolation: isolate; max-width: 460px; margin: 0 auto;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+
+  .brand { text-align: center; margin-bottom: 26px; }
+  h1 { margin: 0; font: 400 58px/1 var(--pixel); letter-spacing: .12em; color: var(--ink);
+    text-shadow: 3px 3px 0 #f7c8e0, 6px 6px 0 #bfe6fb; }
+  .tagline { display: inline-block; margin: 14px 0 0; padding: 3px 10px; font-size: 12px; background: var(--ink); color: #fff; letter-spacing: .04em; }
+
+  /* Window */
+  .win { position: relative; margin-bottom: 22px; background: var(--chrome);
+    border: 2px solid; border-color: var(--chrome-hi) var(--chrome-dk) var(--chrome-dk) var(--chrome-hi);
+    box-shadow: 18px 18px 30px rgba(214, 200, 255, .45); }
+  .win::after { content: ""; position: absolute; z-index: -1; inset: 10px -10px -10px 10px; background: var(--rainbow); }
+  .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 3px 4px 3px 8px; background: var(--bar); border-bottom: 1px solid var(--chrome-lo);
+    font: 400 12px/1.4 var(--pixel); letter-spacing: .06em; }
+  .body { margin: 4px; padding: 14px; background: var(--face);
+    border: 1px solid; border-color: var(--chrome-lo) var(--chrome-hi) var(--chrome-hi) var(--chrome-lo); }
+
+  /* Tiles: icon-and-label rows inside the window */
+  .tile { display: flex; align-items: center; gap: 14px; padding: 10px; color: inherit; text-decoration: none;
+    border: 1px dashed transparent; }
+  .tile + .tile { margin-top: 6px; }
+  .tile:hover, .tile:focus-visible { border-color: var(--chrome-dk); background: var(--rainbow); outline: none; }
+  .tile .icon { width: 48px; height: 48px; flex: none; display: grid; place-items: center; font-size: 26px;
+    background: var(--chrome); border: 2px solid; border-color: var(--chrome-hi) var(--chrome-dk) var(--chrome-dk) var(--chrome-hi); }
+  .tile .name { font: 400 15px/1.3 var(--pixel); letter-spacing: .04em; }
+  .tile .desc { color: var(--muted); font-size: 12px; }
+  .tile .go { margin-left: auto; font-size: 18px; color: var(--chrome-dk); }
+
+  /* Forms */
+  label { display: block; font: 400 11px/1.4 var(--pixel); letter-spacing: .08em; color: var(--muted); }
+  input { width: 100%; margin-top: 6px; padding: 9px 10px; font: 15px var(--mono); color: var(--ink); background: #fff; border-radius: 0;
+    border: 2px solid; border-color: var(--chrome-dk) var(--chrome-hi) var(--chrome-hi) var(--chrome-dk); }
+  input:focus { outline: 2px dotted var(--ink); outline-offset: 2px; }
+  input.code { text-align: center; font-size: 24px; letter-spacing: .4em; }
+  button { font: 400 13px/1 var(--pixel); letter-spacing: .06em; color: var(--ink); cursor: pointer; border-radius: 0; padding: 10px 14px;
+    background: var(--chrome); border: 2px solid; border-color: var(--chrome-hi) var(--chrome-dk) var(--chrome-dk) var(--chrome-hi); }
+  button:active:not(:disabled) { border-color: var(--chrome-dk) var(--chrome-hi) var(--chrome-hi) var(--chrome-dk); padding: 11px 13px 9px 15px; }
+  button:focus-visible { outline: 1px dotted var(--ink); outline-offset: -6px; }
+  .primary { width: 100%; margin-top: 10px; background: var(--bar); }
+  .primary:disabled { color: var(--chrome-lo); cursor: default; }
+  .link { padding: 6px 8px; font-size: 11px; }
+  .note { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+  .err { color: var(--bad); font-size: 12px; margin: 10px 0 0; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .who b { font-weight: 700; }
+  .hidden { display: none !important; }
+  /* Signed out: a landing screen (big title, sign-in, nothing else).
+     Signed in: compact title, account bar, app windows. */
+  main.landing { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
+  main.landing h1 { font-size: 72px; }
+  main.home .brand { margin-bottom: 18px; }
+  main.home h1 { font-size: 40px; }
+  main.home .tagline { margin-top: 10px; }
+  .who { padding: 8px 10px 8px 14px; font-size: 13px; }
+  footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 30px; letter-spacing: .04em; }
+  footer em { font-style: italic; }
+</style>
+</head>
+<body>
+<main id="main" class="landing">
+  <div class="brand">
+    <h1>PEEN</h1>
+    <p class="tagline">Pals' Ever-Expanding Nonsense</p>
+  </div>
+
+  <!-- Signed in -->
+  <section class="win hidden" id="signedIn">
+    <div class="body who">
+      <span>Signed in as <b id="myName">you</b></span>
+      <button class="link" id="signOutBtn">Sign out</button>
+    </div>
+  </section>
+
+  <!-- Signed out: email code -->
+  <section class="win hidden" id="signedOut">
+    <div class="titlebar"><span>Sign in</span></div>
+    <div class="body">
+      <p class="err hidden" id="tapNote" style="margin-top:0;margin-bottom:12px"></p>
+      <form id="emailForm">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button class="primary" id="sendBtn" type="submit">Email me a code</button>
+        <p class="note">One sign-in for Robotomy and the games. No password: we email you a 6-digit code. Got a sticker? Just tap it.</p>
+      </form>
+      <form id="codeForm" class="hidden">
+        <label for="code">Code sent to <span id="sentTo"></span></label>
+        <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+        <button class="primary" id="verifyBtn" type="submit">Sign in</button>
+        <button class="link" id="backBtn" type="button" style="margin-top:8px">Different address</button>
+      </form>
+      <p class="err hidden" id="authErr"></p>
+    </div>
+  </section>
+
+  <div id="tiles" class="hidden"></div>
+
+  <footer data-peen-footer>powered by PEEN-<em>IS</em></footer>
+</main>
+
+<script src="../shared.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const show = (el, on) => el.classList.toggle('hidden', !on);
+  const err = (text) => { $('authErr').textContent = text || ''; show($('authErr'), !!text); };
+
+  // Tiles come from config.json "apps" so adding a game is one line there.
+  const DEFAULT_APPS = [
+    { section: 'Games', name: 'Snuske', desc: "Eat the pouches. Get longer. Don't bite yourself.", icon: '🐍', href: 'snuske/' },
+    { section: 'Robotomy', name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/' },
+  ];
+  // Grouped by "section" (Games, Robotomy, ...), in the order they first appear.
+  function renderTiles(apps) {
+    const sections = [];
+    for (const a of apps) {
+      const name = a.section || 'More';
+      let sec = sections.find((x) => x.name === name);
+      if (!sec) sections.push(sec = { name, apps: [] });
+      sec.apps.push(a);
+    }
+    $('tiles').innerHTML = sections.map((sec) => `<section class="win">
+      <div class="titlebar"><span>${esc(sec.name)}</span></div>
+      <div class="body">${sec.apps.map((a) => `<a class="tile" href="${esc(new URL(a.href, Samdw.root).href)}">
+        <span class="icon">${esc(a.icon || '✨')}</span>
+        <span><div class="name">${esc(a.name)}</div><div class="desc">${esc(a.desc || '')}</div></span>
+        <span class="go" aria-hidden="true">&#9656;</span>
+      </a>`).join('')}</div>
+    </section>`).join('');
+  }
+
+  async function renderAccount() {
+    const s = await Samdw.session();
+    show($('signedIn'), !!s);
+    show($('signedOut'), !s);
+    show($('tiles'), !!s);
+    $('main').className = s ? 'home' : 'landing';
+    if (s) {
+      $('myName').textContent = s.user.email;
+      try { const me = await Samdw.rpc('my_player'); if (me && me.name) $('myName').textContent = me.name; } catch { /* keep email */ }
+    } else {
+      const note = Samdw.tapResult === 'unlinked'
+        ? "That sticker isn't linked to anyone yet. Sign in once and it becomes yours: after that, a tap signs you straight in."
+        : Samdw.tapResult === 'off' ? 'That sticker has been turned off. Sign in with your email instead.' : '';
+      $('tapNote').textContent = note; show($('tapNote'), !!note);
+      $('tapNote').style.color = Samdw.tapResult === 'unlinked' ? 'var(--muted)' : '';
+    }
+  }
+
+  $('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('sendBtn').disabled = true; err('');
+    const problem = await Samdw.sendCode($('email').value);
+    $('sendBtn').disabled = false;
+    if (problem) return err(problem);
+    $('sentTo').textContent = $('email').value.trim();
+    show($('emailForm'), false); show($('codeForm'), true); $('code').focus();
+  });
+  $('codeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('verifyBtn').disabled = true; err('');
+    const problem = await Samdw.verifyCode($('email').value, $('code').value);
+    $('verifyBtn').disabled = false;
+    if (problem) { $('code').value = ''; return err(problem); }
+    show($('codeForm'), false); show($('emailForm'), true);
+    renderAccount();
+  });
+  $('backBtn').addEventListener('click', () => { show($('codeForm'), false); show($('emailForm'), true); err(''); });
+  $('signOutBtn').addEventListener('click', async () => { await Samdw.signOut(); renderAccount(); });
+
+  (async () => {
+    const cfg = await Samdw.config;
+    renderTiles((Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS).filter((a) => a.href));
+    if (!(await Samdw.online)) {
+      $('main').className = 'home'; // offline: games still play, nothing to sign in to
+      return err('Offline right now. The games still work; sign in when you are back online.');
+    }
+    renderAccount();
+  })();
+})();
+</script>
+</body>
+</html>

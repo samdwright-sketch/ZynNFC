@@ -16,6 +16,9 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0d1726;
@@ -76,7 +79,7 @@
     color: var(--ink); text-shadow: 0 5px 0 var(--mint-dark), 0 10px 24px rgba(0,0,0,.45);
   }
   .logo svg { width: clamp(40px, 12vw, 60px); height: auto; transform: rotate(-14deg); filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
-  .tag { color: var(--muted); font-size: 16px; margin: 12px 0 26px; max-width: 300px; line-height: 1.4; }
+  .tag { color: var(--muted); font-size: 16px; margin: 12px 0 30px; max-width: 300px; line-height: 1.4; }
   .btn {
     border: 0; border-radius: 18px; padding: 18px 44px; min-width: 220px; cursor: pointer;
     font: inherit; font-size: 22px; font-weight: 900; letter-spacing: .02em;
@@ -102,6 +105,8 @@
   @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
   .who { margin-top: 14px; font-size: 14px; color: var(--muted); min-height: 18px; }
   .who b { color: var(--ink); }
+  .who a { color: var(--muted); }
+  .who #notMe { padding-left: 6px; opacity: .7; }
   .who button { background: none; border: 0; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; padding: 0 0 0 6px; opacity: .7; }
   .rank-line { min-height: 20px; margin: -10px 0 22px; color: var(--mint); font-weight: 800; font-size: 15px; }
   .board { list-style: none; margin: 18px 0 0; padding: 12px 14px; width: min(320px, 100%); background: var(--panel); border-radius: 16px; text-align: left; }
@@ -120,6 +125,41 @@
     transition: opacity .3s; opacity: 0; pointer-events: none;
   }
   #toast.show { opacity: 1; }
+  .peen-link { display: inline-block; margin-top: 14px; color: inherit; opacity: .7; font-size: 13px; letter-spacing: .15em; text-decoration: none; }
+  .peen-footer { margin-top: 10px; font-size: 11px; opacity: .5; letter-spacing: .05em; }
+
+  /* ---------- PEEN dark chrome ----------
+     Menus sit in PEEN windows: square, darker grey bevels, muted jewel-tone
+     title bars and offset shadow. The game area and logo stay Snuske's own;
+     buttons keep the mint. No animation added. */
+  :root {
+    --chrome: #2c2f37; --chrome-hi: #4d515c; --chrome-lo: #16181d; --face: #121d2e;
+    --jewel: linear-gradient(90deg, #7b4563, #574a87 35%, #2f6683 65%, #2f705c);
+    --pixel: "Silkscreen", ui-monospace, monospace; --mono: "Space Mono", ui-monospace, monospace;
+  }
+  .screen { -webkit-backdrop-filter: none; backdrop-filter: none; background:
+    radial-gradient(60vmax 40vmax at 50% 35%, rgba(87, 74, 135, .28), transparent 70%), rgba(13, 23, 38, .86); }
+  .win { position: relative; isolation: isolate; width: min(360px, 100%); background: var(--chrome);
+    border: 2px solid; border-color: var(--chrome-hi) var(--chrome-lo) var(--chrome-lo) var(--chrome-hi);
+    box-shadow: 16px 16px 30px rgba(0, 0, 0, .35); }
+  .win::after { content: ""; position: absolute; z-index: -1; inset: 10px -10px -10px 10px; background: var(--jewel); opacity: .75; }
+  .titlebar { padding: 4px 10px; text-align: left; background: var(--jewel); color: #f4efe6;
+    font: 400 12px/1.5 var(--pixel); letter-spacing: .08em; border-bottom: 1px solid var(--chrome-lo); }
+  .win-body { margin: 4px; padding: 22px 16px; background: var(--face);
+    border: 1px solid; border-color: var(--chrome-lo) var(--chrome-hi) var(--chrome-hi) var(--chrome-lo);
+    display: flex; flex-direction: column; align-items: center; }
+  .btn { border-radius: 0; box-shadow: none; transition: none; font-family: var(--pixel); font-weight: 400; letter-spacing: .08em;
+    border: 3px solid; border-color: #9ff0d6 var(--mint-dark) var(--mint-dark) #9ff0d6; }
+  .btn:active { transform: none; box-shadow: none; border-color: var(--mint-dark) #9ff0d6 #9ff0d6 var(--mint-dark); padding-top: 20px; padding-bottom: 16px; }
+  .btn.ghost { background: var(--chrome); color: var(--ink); box-shadow: none; border-color: var(--chrome-hi) var(--chrome-lo) var(--chrome-lo) var(--chrome-hi); }
+  .btn.ghost:active { box-shadow: none; border-color: var(--chrome-lo) var(--chrome-hi) var(--chrome-hi) var(--chrome-lo); }
+  .best-line, .big-label, .board h3, .stat small { font-family: var(--pixel); font-weight: 400; }
+  .board { border-radius: 0; background: #0b1422; border: 1px solid; border-color: var(--chrome-lo) var(--chrome-hi) var(--chrome-hi) var(--chrome-lo); }
+  .board li { border-radius: 0; font-family: var(--mono); font-size: 14px; }
+  .badge { border-radius: 0; font-family: var(--pixel); font-weight: 400; }
+  .hud-btn { border-radius: 0; background: var(--chrome); border: 2px solid; border-color: var(--chrome-hi) var(--chrome-lo) var(--chrome-lo) var(--chrome-hi); }
+  .peen-link { font-family: var(--pixel); margin-top: 26px; }
+  .peen-footer { font-family: var(--mono); }
 </style>
 </head>
 <body>
@@ -143,21 +183,36 @@
     <h1>SNUSKE</h1>
   </div>
   <p class="tag">Eat the pouches. Get longer. Don't bite yourself.</p>
+<div class="win">
+  <div class="titlebar">Play</div>
+  <div class="win-body">
   <button class="btn" id="playBtn">PLAY</button>
   <div class="best-line">BEST <b id="menuBest">0</b></div>
   <div class="who" id="menuWho"></div>
   <div class="board hidden" id="menuBoard"><h3>LEADERBOARD</h3><ol></ol></div>
   <div class="help">Drag anywhere to steer</div>
+  </div>
+</div>
+<a class="peen-link" href="../hub/">&larr; PEEN</a>
+<div class="peen-footer" data-peen-footer>powered by PEEN-<em>IS</em></div>
 </section>
 
 <section id="paused" class="screen hidden">
+<div class="win">
+  <div class="titlebar">Paused</div>
+  <div class="win-body">
   <h2 class="over-title">Paused</h2>
   <p class="over-sub">Take a breather.</p>
   <button class="btn" id="resumeBtn">RESUME</button>
   <button class="btn ghost" id="quitBtn">MENU</button>
+  </div>
+</div>
 </section>
 
 <section id="over" class="screen hidden">
+<div class="win">
+  <div class="titlebar">Game over</div>
+  <div class="win-body">
   <h2 class="over-title" id="overTitle">Ouch!</h2>
   <p class="over-sub" id="overSub">You bit yourself.</p>
   <div id="newBest" class="badge hidden">NEW BEST</div>
@@ -168,6 +223,8 @@
   <button class="btn ghost" id="shareBtn">SHARE SCORE</button>
   <div class="best-line">BEST <b id="finalBest">0</b></div>
   <div class="board hidden" id="overBoard"><h3>LEADERBOARD</h3><ol></ol></div>
+  </div>
+</div>
 </section>
 
 <div id="toast"></div>
