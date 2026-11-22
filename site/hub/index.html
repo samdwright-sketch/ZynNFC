@@ -54,9 +54,6 @@
   .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 8px;
     padding: 3px 4px 3px 8px; background: var(--bar); border-bottom: 1px solid var(--chrome-lo);
     font: 400 12px/1.4 var(--pixel); letter-spacing: .06em; }
-  .ctrls { display: flex; gap: 3px; }
-  .ctrls span { width: 16px; height: 14px; display: grid; place-items: center; font: 700 9px/1 var(--mono);
-    background: var(--chrome); border: 1px solid; border-color: var(--chrome-hi) var(--chrome-dk) var(--chrome-dk) var(--chrome-hi); }
   .body { margin: 4px; padding: 14px; background: var(--face);
     border: 1px solid; border-color: var(--chrome-lo) var(--chrome-hi) var(--chrome-hi) var(--chrome-lo); }
 
@@ -89,12 +86,20 @@
   .who { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .who b { font-weight: 700; }
   .hidden { display: none !important; }
+  /* Signed out: a landing screen (big title, sign-in, nothing else).
+     Signed in: compact title, account bar, app windows. */
+  main.landing { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
+  main.landing h1 { font-size: 72px; }
+  main.home .brand { margin-bottom: 18px; }
+  main.home h1 { font-size: 40px; }
+  main.home .tagline { margin-top: 10px; }
+  .who { padding: 8px 10px 8px 14px; font-size: 13px; }
   footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 30px; letter-spacing: .04em; }
   footer em { font-style: italic; }
 </style>
 </head>
 <body>
-<main>
+<main id="main" class="landing">
   <div class="brand">
     <h1>PEEN</h1>
     <p class="tagline">Pals' Ever-Expanding Nonsense</p>
@@ -102,7 +107,6 @@
 
   <!-- Signed in -->
   <section class="win hidden" id="signedIn">
-    <div class="titlebar"><span>you.exe</span><span class="ctrls"><span>_</span><span>&#9633;</span><span>&times;</span></span></div>
     <div class="body who">
       <span>Signed in as <b id="myName">you</b></span>
       <button class="link" id="signOutBtn">Sign out</button>
@@ -111,11 +115,11 @@
 
   <!-- Signed out: email code -->
   <section class="win hidden" id="signedOut">
-    <div class="titlebar"><span>sign_in.exe</span><span class="ctrls"><span>_</span><span>&#9633;</span><span>&times;</span></span></div>
+    <div class="titlebar"><span>Sign in</span></div>
     <div class="body">
       <p class="err hidden" id="tapNote" style="margin-top:0;margin-bottom:12px"></p>
       <form id="emailForm">
-        <label for="email">Sign in to PEEN</label>
+        <label for="email">Email</label>
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
         <button class="primary" id="sendBtn" type="submit">Email me a code</button>
         <p class="note">One sign-in for Robotomy and the games. No password: we email you a 6-digit code. Got a sticker? Just tap it.</p>
@@ -130,7 +134,7 @@
     </div>
   </section>
 
-  <div id="tiles"></div>
+  <div id="tiles" class="hidden"></div>
 
   <footer data-peen-footer>powered by PEEN-<em>IS</em></footer>
 </main>
@@ -159,7 +163,7 @@
       sec.apps.push(a);
     }
     $('tiles').innerHTML = sections.map((sec) => `<section class="win">
-      <div class="titlebar"><span>${esc(sec.name.toLowerCase())}/</span><span class="ctrls"><span>_</span><span>&#9633;</span><span>&times;</span></span></div>
+      <div class="titlebar"><span>${esc(sec.name)}</span></div>
       <div class="body">${sec.apps.map((a) => `<a class="tile" href="${esc(new URL(a.href, Samdw.root).href)}">
         <span class="icon">${esc(a.icon || '✨')}</span>
         <span><div class="name">${esc(a.name)}</div><div class="desc">${esc(a.desc || '')}</div></span>
@@ -172,6 +176,8 @@
     const s = await Samdw.session();
     show($('signedIn'), !!s);
     show($('signedOut'), !s);
+    show($('tiles'), !!s);
+    $('main').className = s ? 'home' : 'landing';
     if (s) {
       $('myName').textContent = s.user.email;
       try { const me = await Samdw.rpc('my_player'); if (me && me.name) $('myName').textContent = me.name; } catch { /* keep email */ }
@@ -209,7 +215,7 @@
     const cfg = await Samdw.config;
     renderTiles((Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS).filter((a) => a.href));
     if (!(await Samdw.online)) {
-      show($('signedOut'), true);
+      $('main').className = 'home'; // offline: games still play, nothing to sign in to
       return err('Offline right now. The games still work; sign in when you are back online.');
     }
     renderAccount();
