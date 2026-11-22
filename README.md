@@ -9,7 +9,7 @@ NFC stickers point here. Each sticker has its own ID, so scores are logged under
 - **One account for everything.** Accounts live in Robotomy's Supabase project (migration `008_peen.sql` and the `tag-login` Edge Function are in the Robotomy repo). The login is a cookie shared across `*.samdw.ca`.
 - **Stickers sign you in.** A linked sticker signs its owner in with one tap. An unlinked sticker is claimed by whoever signs in with an email code right after tapping it.
 - **Admin** (`/admin/`): link stickers to accounts, unlink, turn off a lost sticker, or replace it with a new 16-character ID.
-- **Hub tiles** come from `apps` in `config.json`. Add a game by adding a line there.
+- **Hub tiles** come from `apps` in `config.json`, grouped by `section` (Games, Robotomy). Add a game by adding a line there.
 - **Sign-in required.** Snuske sends anyone not signed in to the hub (offline, it still plays).
 
 ### Switching to PEEN (once)

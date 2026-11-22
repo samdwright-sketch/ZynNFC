@@ -10,13 +10,15 @@
       "name": "Snuske",
       "desc": "Eat the pouches. Get longer. Don't bite yourself.",
       "icon": "🐍",
-      "href": "snuske/"
+      "href": "snuske/",
+      "section": "Games"
     },
     {
       "name": "Robotomy",
       "desc": "Personality tests, deeply unserious",
       "icon": "🤖",
-      "href": "https://robotomy.samdw.ca/"
+      "href": "https://robotomy.samdw.ca/",
+      "section": "Robotomy"
     }
   ]
 }

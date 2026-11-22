@@ -25,7 +25,7 @@
   .tile .icon { font-size: 30px; width: 44px; text-align: center; }
   .tile .name { font-weight: 700; font-size: 17px; }
   .tile .desc { color: var(--muted); font-size: 13px; }
-  .tile.soon { opacity: .45; pointer-events: none; }
+  h2 { margin: 10px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
   label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
   input { width: 100%; margin-top: 6px; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line);
     background: var(--bg); color: var(--text); font: inherit; }
@@ -85,17 +85,25 @@
 
   // Tiles come from config.json "apps" so adding a game is one line there.
   const DEFAULT_APPS = [
-    { name: 'Snuske', desc: 'The game', icon: '🐍', href: 'snuske/' },
-    { name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/' },
+    { section: 'Games', name: 'Snuske', desc: "Eat the pouches. Get longer. Don't bite yourself.", icon: '🐍', href: 'snuske/' },
+    { section: 'Robotomy', name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/' },
   ];
+  // Grouped by "section" (Games, Robotomy, ...), in the order they first appear.
   function renderTiles(apps) {
-    $('tiles').innerHTML = apps.map((a) => {
-      const href = a.href ? new URL(a.href, Samdw.root).href : '';
-      return `<a class="tile${href ? '' : ' soon'}" href="${esc(href || '#')}">
+    const sections = [];
+    for (const a of apps) {
+      const name = a.section || 'More';
+      let sec = sections.find((x) => x.name === name);
+      if (!sec) sections.push(sec = { name, apps: [] });
+      sec.apps.push(a);
+    }
+    $('tiles').innerHTML = sections.map((sec) => `<h2>${esc(sec.name)}</h2>` + sec.apps.map((a) => {
+      const href = new URL(a.href, Samdw.root).href;
+      return `<a class="tile" href="${esc(href)}">
         <span class="icon">${esc(a.icon || '✨')}</span>
-        <span><div class="name">${esc(a.name)}</div><div class="desc">${esc(a.desc || (href ? '' : 'Coming soon'))}</div></span>
+        <span><div class="name">${esc(a.name)}</div><div class="desc">${esc(a.desc || '')}</div></span>
       </a>`;
-    }).join('');
+    }).join('')).join('');
   }
 
   async function renderAccount() {
@@ -137,7 +145,7 @@
 
   (async () => {
     const cfg = await Samdw.config;
-    renderTiles(Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS);
+    renderTiles((Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS).filter((a) => a.href));
     if (!(await Samdw.online)) {
       show($('signedOut'), true);
       return err('Offline right now. The games still work; sign in when you are back online.');
