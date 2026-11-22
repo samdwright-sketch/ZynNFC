@@ -102,6 +102,8 @@
   @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
   .who { margin-top: 14px; font-size: 14px; color: var(--muted); min-height: 18px; }
   .who b { color: var(--ink); }
+  .who a { color: var(--muted); }
+  .who #notMe { padding-left: 6px; opacity: .7; }
   .who button { background: none; border: 0; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; padding: 0 0 0 6px; opacity: .7; }
   .rank-line { min-height: 20px; margin: -10px 0 22px; color: var(--mint); font-weight: 800; font-size: 15px; }
   .board { list-style: none; margin: 18px 0 0; padding: 12px 14px; width: min(320px, 100%); background: var(--panel); border-radius: 16px; text-align: left; }
@@ -120,6 +122,8 @@
     transition: opacity .3s; opacity: 0; pointer-events: none;
   }
   #toast.show { opacity: 1; }
+  .peen-link { display: inline-block; margin-top: 14px; color: inherit; opacity: .7; font-size: 13px; letter-spacing: .15em; text-decoration: none; }
+  .peen-footer { margin-top: 10px; font-size: 11px; opacity: .5; letter-spacing: .05em; }
 </style>
 </head>
 <body>
@@ -148,6 +152,8 @@
   <div class="who" id="menuWho"></div>
   <div class="board hidden" id="menuBoard"><h3>LEADERBOARD</h3><ol></ol></div>
   <div class="help">Drag anywhere to steer</div>
+  <a class="peen-link" href="../hub/">&larr; PEEN</a>
+  <div class="peen-footer" data-peen-footer>powered by PEEN-<em>IS</em></div>
 </section>
 
 <section id="paused" class="screen hidden">

@@ -663,30 +663,29 @@
   }
   async function loadBoard(box, limit) {
     if (!LB || !(await LB.online)) return;
-    try { renderBoard(box, await LB.rpc('leaderboard', { p_game: GAME_ID, p_limit: limit, p_tag: LB.tag })); } catch { /* offline */ }
+    try { renderBoard(box, await LB.rpc('leaderboard', { p_game: GAME_ID, p_limit: limit })); } catch { /* offline */ }
   }
+  // Scores belong to PEEN accounts: signed in (by sticker tap or email code
+  // at the hub) means on the leaderboard; otherwise you play as a guest.
   function renderWho() {
     const who = $('menuWho');
-    if (LB.tag && playerName) {
-      who.innerHTML = `Playing as <b>${esc(playerName)}</b><button type="button" id="notMe">not you?</button>`;
-      $('notMe').addEventListener('click', () => { LB.forgetTag(); playerName = null; renderWho(); loadBoard($('menuBoard'), 5); });
+    if (playerName) {
+      who.innerHTML = `Playing as <b>${esc(playerName)}</b><a href="../hub/" id="notMe">not you?</a>`;
     } else {
-      who.textContent = 'Tap a sticker to join the leaderboard';
+      who.innerHTML = 'Playing as a guest. <a href="../hub/">Sign in at PEEN</a> or tap your sticker to join the leaderboard';
     }
   }
   async function initOnline() {
     if (!LB || !(await LB.online)) return;
-    if (LB.tag) {
-      try {
-        const p = await LB.rpc('player', { p_tag: LB.tag, p_game: GAME_ID });
+    try {
+      if (await LB.session()) {
+        const p = await LB.rpc('my_player', { p_game: GAME_ID });
         if (p && p.name) {
           playerName = p.name;
           if (p.best > S.best) { S.best = p.best; store.set('snuske.best', String(S.best)); el.menuBest.textContent = S.best; }
-        } else {
-          LB.forgetTag(); // tag was deleted or never existed
         }
-      } catch { /* offline: keep the tag, try again next load */ }
-    }
+      }
+    } catch { /* offline: play as guest this time */ }
     renderWho();
     loadBoard($('menuBoard'), 5);
   }
@@ -695,12 +694,12 @@
     line.textContent = ''; line.style.color = '';
     show(board, false);
     if (!LB || !(await LB.online)) return;
-    if (!LB.tag || !playerName) {
-      line.textContent = 'Tap a sticker to get on the leaderboard'; line.style.color = 'var(--muted)';
+    if (!playerName) {
+      line.textContent = 'Sign in at PEEN to get on the leaderboard'; line.style.color = 'var(--muted)';
     } else if (score > 0) {
       line.textContent = 'Saving...';
       try {
-        const r = await LB.rpc('submit_score', { p_tag: LB.tag, p_score: score, p_game: GAME_ID });
+        const r = await LB.rpc('submit_my_score', { p_score: score, p_game: GAME_ID });
         line.textContent = r.error ? '' : (r.new_best ? `New personal best! #${r.rank} of ${r.total}` : `You're #${r.rank} of ${r.total}`);
       } catch {
         line.textContent = 'Offline: score not saved'; line.style.color = 'var(--muted)';

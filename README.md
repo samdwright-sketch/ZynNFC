@@ -2,6 +2,23 @@
 
 NFC stickers point here. Each sticker has its own ID, so scores are logged under the name you gave that sticker. Today every tap opens **Snuske**; later you can send taps anywhere by editing one line.
 
+## PEEN
+
+`tap.samdw.ca` is **PEEN** (Pals' Ever-Expanding Nonsense), the hub for Robotomy and the games. Every page says "powered by PEEN-*IS*".
+
+- **One account for everything.** Accounts live in Robotomy's Supabase project (migration `008_peen.sql` and the `tag-login` Edge Function are in the Robotomy repo). The login is a cookie shared across `*.samdw.ca`.
+- **Stickers sign you in.** A linked sticker signs its owner in with one tap. An unlinked sticker is claimed by whoever signs in with an email code right after tapping it.
+- **Admin** (`/admin/`): link stickers to accounts, unlink, turn off a lost sticker, or replace it with a new 16-character ID.
+- **Hub tiles** come from `apps` in `config.json`. An app with an empty `href` shows as "Coming soon".
+- **Guests** can still play Snuske, but only signed-in players are on the leaderboard.
+
+### Switching to PEEN (once)
+1. Run `supabase/migrations/008_peen.sql` from the Robotomy repo in Robotomy's Supabase project, and deploy its `tag-login` function (`supabase functions deploy tag-login --no-verify-jwt`).
+2. In `config.json`, replace the `supabase` URL and key with Robotomy's project URL and publishable (anon) key.
+3. Copy the old players and scores across (instructions at the bottom of `008_peen.sql`), then link stickers to accounts in `/admin/`.
+
+> The sections below describe the original tag-only setup. The tag-based `player` and `submit_score` functions are gone; Snuske now uses `my_player` and `submit_my_score`.
+
 ## How it works
 
 ```

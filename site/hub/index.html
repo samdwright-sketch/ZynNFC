@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0d1726">
+<title>PEEN</title>
+<style>
+  :root { color-scheme: dark; --bg: #0d1726; --card: #15233a; --line: #23344f; --text: #e6edf6; --muted: #8fa3bd; --accent: #5fd3b0; --bad: #ff7a8a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 440px; margin: 0 auto;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  h1 { margin: 0; font-size: 44px; letter-spacing: .18em; text-align: center; color: var(--accent); }
+  .tagline { margin: 4px 0 24px; text-align: center; color: var(--muted); font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .who { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .who b { color: var(--accent); }
+  .tiles { display: grid; gap: 12px; }
+  .tile { display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .tile:hover { border-color: var(--accent); }
+  .tile .icon { font-size: 30px; width: 44px; text-align: center; }
+  .tile .name { font-weight: 700; font-size: 17px; }
+  .tile .desc { color: var(--muted); font-size: 13px; }
+  .tile.soon { opacity: .45; pointer-events: none; }
+  label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  input { width: 100%; margin-top: 6px; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); font: inherit; }
+  input.code { text-align: center; font-size: 24px; letter-spacing: .4em; font-family: ui-monospace, monospace; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; padding: 11px 14px; }
+  .primary { width: 100%; margin-top: 10px; background: var(--accent); color: #062018; font-weight: 700; }
+  .primary:disabled { opacity: .4; cursor: default; }
+  .link { background: none; color: var(--muted); padding: 4px; text-decoration: underline; font-size: 13px; }
+  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .err { color: var(--bad); font-size: 13px; margin: 8px 0 0; }
+  .hidden { display: none !important; }
+  footer { text-align: center; color: var(--muted); font-size: 11px; letter-spacing: .05em; opacity: .7; margin-top: 28px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>PEEN</h1>
+  <p class="tagline">Pals' Ever-Expanding Nonsense</p>
+
+  <!-- Signed in -->
+  <div class="card who hidden" id="signedIn">
+    <span>Signed in as <b id="myName">you</b></span>
+    <button class="link" id="signOutBtn">Sign out</button>
+  </div>
+
+  <!-- Signed out: email code -->
+  <div class="card hidden" id="signedOut">
+    <p class="err hidden" id="tapNote"></p>
+    <form id="emailForm">
+      <label for="email">Sign in to PEEN</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <button class="primary" id="sendBtn" type="submit">Email me a code</button>
+      <p class="note">One sign-in for Robotomy and the games. No password: we email you a 6-digit code. Got a sticker? Just tap it.</p>
+    </form>
+    <form id="codeForm" class="hidden">
+      <label for="code">Code sent to <span id="sentTo"></span></label>
+      <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <button class="primary" id="verifyBtn" type="submit">Sign in</button>
+      <button class="link" id="backBtn" type="button">Different address</button>
+    </form>
+    <p class="err hidden" id="authErr"></p>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <footer data-peen-footer>powered by PEEN-<em>IS</em></footer>
+</main>
+
+<script src="../shared.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const show = (el, on) => el.classList.toggle('hidden', !on);
+  const err = (text) => { $('authErr').textContent = text || ''; show($('authErr'), !!text); };
+
+  // Tiles come from config.json "apps" so adding a game is one line there.
+  const DEFAULT_APPS = [
+    { name: 'Snuske', desc: 'The game', icon: '🐍', href: 'snuske/' },
+    { name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/' },
+  ];
+  function renderTiles(apps) {
+    $('tiles').innerHTML = apps.map((a) => {
+      const href = a.href ? new URL(a.href, Samdw.root).href : '';
+      return `<a class="tile${href ? '' : ' soon'}" href="${esc(href || '#')}">
+        <span class="icon">${esc(a.icon || '✨')}</span>
+        <span><div class="name">${esc(a.name)}</div><div class="desc">${esc(a.desc || (href ? '' : 'Coming soon'))}</div></span>
+      </a>`;
+    }).join('');
+  }
+
+  async function renderAccount() {
+    const s = await Samdw.session();
+    show($('signedIn'), !!s);
+    show($('signedOut'), !s);
+    if (s) {
+      $('myName').textContent = s.user.email;
+      try { const me = await Samdw.rpc('my_player'); if (me && me.name) $('myName').textContent = me.name; } catch { /* keep email */ }
+    } else {
+      const note = Samdw.tapResult === 'unlinked'
+        ? "That sticker isn't linked to anyone yet. Sign in once and it becomes yours: after that, a tap signs you straight in."
+        : Samdw.tapResult === 'off' ? 'That sticker has been turned off. Sign in with your email instead.' : '';
+      $('tapNote').textContent = note; show($('tapNote'), !!note);
+      $('tapNote').style.color = Samdw.tapResult === 'unlinked' ? 'var(--muted)' : '';
+    }
+  }
+
+  $('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('sendBtn').disabled = true; err('');
+    const problem = await Samdw.sendCode($('email').value);
+    $('sendBtn').disabled = false;
+    if (problem) return err(problem);
+    $('sentTo').textContent = $('email').value.trim();
+    show($('emailForm'), false); show($('codeForm'), true); $('code').focus();
+  });
+  $('codeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('verifyBtn').disabled = true; err('');
+    const problem = await Samdw.verifyCode($('email').value, $('code').value);
+    $('verifyBtn').disabled = false;
+    if (problem) { $('code').value = ''; return err(problem); }
+    show($('codeForm'), false); show($('emailForm'), true);
+    renderAccount();
+  });
+  $('backBtn').addEventListener('click', () => { show($('codeForm'), false); show($('emailForm'), true); err(''); });
+  $('signOutBtn').addEventListener('click', async () => { await Samdw.signOut(); renderAccount(); });
+
+  (async () => {
+    const cfg = await Samdw.config;
+    renderTiles(Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS);
+    if (!(await Samdw.online)) {
+      show($('signedOut'), true);
+      return err('Offline right now. The games still work; sign in when you are back online.');
+    }
+    renderAccount();
+  })();
+})();
+</script>
+</body>
+</html>

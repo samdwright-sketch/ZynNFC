@@ -1,8 +1,28 @@
 {
-  "go": "snuske/",
+  "go": "hub/",
   "tapUrl": "https://tap.samdw.ca/",
   "supabase": {
     "url": "https://tabqnqskcidqnbqfbesk.supabase.co",
     "key": "sb_publishable_nKm6JVd3iJwlmlwGFW_xQA_aTpdKZ8u"
-  }
+  },
+  "apps": [
+    {
+      "name": "Snuske",
+      "desc": "Eat the pouches. Get longer. Don't bite yourself.",
+      "icon": "🐍",
+      "href": "snuske/"
+    },
+    {
+      "name": "Robotomy",
+      "desc": "Personality tests, deeply unserious",
+      "icon": "🤖",
+      "href": "https://robotomy.samdw.ca/"
+    },
+    {
+      "name": "Game two",
+      "desc": "Coming soon",
+      "icon": "🎲",
+      "href": ""
+    }
+  ]
 }
