@@ -665,14 +665,13 @@
     if (!LB || !(await LB.online)) return;
     try { renderBoard(box, await LB.rpc('leaderboard', { p_game: GAME_ID, p_limit: limit })); } catch { /* offline */ }
   }
-  // Scores belong to PEEN accounts: signed in (by sticker tap or email code
-  // at the hub) means on the leaderboard; otherwise you play as a guest.
+  // Scores belong to PEEN accounts, signed in by sticker tap or email code.
   function renderWho() {
     const who = $('menuWho');
     if (playerName) {
       who.innerHTML = `Playing as <b>${esc(playerName)}</b><a href="../hub/" id="notMe">not you?</a>`;
     } else {
-      who.innerHTML = 'Playing as a guest. <a href="../hub/">Sign in at PEEN</a> or tap your sticker to join the leaderboard';
+      who.textContent = '';
     }
   }
   async function initOnline() {
@@ -685,7 +684,10 @@
           if (p.best > S.best) { S.best = p.best; store.set('snuske.best', String(S.best)); el.menuBest.textContent = S.best; }
         }
       }
-    } catch { /* offline: play as guest this time */ }
+    } catch { /* offline: play anyway, scores just aren't saved */ }
+    // PEEN needs a sign-in: send anyone who isn't signed in to the hub.
+    // Offline (no backend) still plays, since there's nothing to sign in to.
+    if (!playerName && !(await LB.session())) { location.replace('../hub/'); return; }
     renderWho();
     loadBoard($('menuBoard'), 5);
   }
