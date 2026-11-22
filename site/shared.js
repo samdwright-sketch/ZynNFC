@@ -171,6 +171,18 @@
     const c = await ready; if (c) await c.auth.signOut();
   }
 
+  // Attachment for Request / submit: goes to the private peen-submissions
+  // bucket under a random folder. Uploads only; nobody can read it back
+  // except Sam's inbox.
+  async function upload(file) {
+    const c = await ready; if (!c) throw new Error('offline');
+    const safe = (file.name || 'file').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-100) || 'file';
+    const path = `${crypto.randomUUID()}/${safe}`;
+    const { error } = await c.storage.from('peen-submissions').upload(path, file, { contentType: file.type || undefined, upsert: false });
+    if (error) throw new Error(error.message);
+    return { path, name: file.name || safe, type: file.type || '', size: file.size };
+  }
+
   // "powered by PEEN-IS" on every page: any element with data-peen-footer.
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-peen-footer]').forEach((el) => { el.innerHTML = 'powered by PEEN-<em>IS</em>'; });
@@ -188,5 +200,6 @@
     verifyCode,
     signOut,
     rpc,
+    upload,
   };
 })();

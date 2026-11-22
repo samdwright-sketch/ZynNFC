@@ -122,6 +122,15 @@
   .ok { color: #2f7a5c; font-size: 12px; margin: 10px 0 0; }
   .install ol { margin: 8px 0 0; padding-left: 18px; font-size: 12px; }
   .install li + li { margin-top: 4px; }
+  textarea, select { width: 100%; margin-top: 6px; padding: 9px 10px; font: 14px/1.4 var(--mono); color: var(--ink); background: #fff; border-radius: 0;
+    border: 2px solid; border-color: var(--chrome-dk) var(--chrome-hi) var(--chrome-hi) var(--chrome-dk); }
+  textarea { min-height: 110px; resize: vertical; }
+  textarea:focus, select:focus { outline: 2px dotted var(--ink); outline-offset: 2px; }
+  .check { display: flex; align-items: center; gap: 8px; font: 13px var(--mono); color: var(--ink); letter-spacing: 0; margin-top: 12px; }
+  .check input { width: auto; margin: 0; }
+  .files { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }
+  .files li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dotted var(--chrome-lo); }
+  .files button { padding: 2px 6px; font-size: 10px; }
 </style>
 </head>
 <body>
@@ -194,6 +203,35 @@
   </section>
 
   <div id="tiles" class="hidden"></div>
+
+  <!-- Request / submit: messages and files to Sam -->
+  <section class="win hidden" id="request">
+    <div class="titlebar"><span>Request / submit</span></div>
+    <div class="body">
+      <p class="note" style="margin:0 0 12px">Send Sam a request, an idea, or anything else. Only Sam sees it.</p>
+      <form id="reqForm">
+        <label for="reqCat">What is it?</label>
+        <select id="reqCat" required>
+          <option value="">Pick one...</option>
+          <option value="3d-print">3D print idea</option>
+          <option value="pottery">Pottery request</option>
+          <option value="zyn-container">Zyn container</option>
+          <option value="game-idea">New game idea</option>
+          <option value="feature">New feature</option>
+          <option value="other">Something else</option>
+        </select>
+        <div class="field"><label for="reqMsg">Details</label>
+          <textarea id="reqMsg" maxlength="4000" placeholder="What, how big, what colour, by when, why it would be funny..." required></textarea></div>
+        <div class="field"><label for="reqFiles">Pictures or files (up to 8, 20 MB each)</label>
+          <input id="reqFiles" type="file" multiple accept="image/*,video/*,.pdf,.stl,.obj,.3mf,.txt,.zip">
+          <ul class="files" id="reqFileList"></ul></div>
+        <label class="check"><input type="checkbox" id="reqAnon"> Send anonymously (Sam won't see your name)</label>
+        <button class="primary" id="reqBtn" type="submit">Send to Sam</button>
+        <p class="err hidden" id="reqErr"></p>
+        <p class="ok hidden" id="reqOk">Sent. Thanks!</p>
+      </form>
+    </div>
+  </section>
 
   <!-- Home-screen install tip (hidden once installed) -->
   <section class="win hidden install" id="install">
@@ -272,6 +310,7 @@
     show($('setup'), which === 'setup');
     show($('account'), which === 'home');
     show($('tiles'), which === 'home');
+    show($('request'), which === 'home');
     $('main').className = which === 'home' ? 'home' : 'landing';
     showInstall(which === 'home');
   }
@@ -377,6 +416,44 @@
     await Samdw.signOut(); me = null;
     show($('profileForm'), false); $('editBtn').textContent = 'Edit profile';
     load();
+  });
+
+  // ---------- Request / submit ----------
+  let reqFiles = [];
+  const fmtSize = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  function renderReqFiles() {
+    $('reqFileList').innerHTML = reqFiles.map((f, i) => `<li><span>${esc(f.name)} (${fmtSize(f.size)})</span><button type="button" data-i="${i}">Remove</button></li>`).join('');
+  }
+  $('reqFiles').addEventListener('change', (e) => {
+    for (const f of e.target.files) {
+      if (reqFiles.length >= 8) { msg('reqErr', 'Up to 8 attachments.'); break; }
+      if (f.size > 20 * 1048576) { msg('reqErr', `${f.name} is over 20 MB.`); continue; }
+      reqFiles.push(f);
+    }
+    e.target.value = ''; renderReqFiles();
+  });
+  $('reqFileList').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    reqFiles.splice(Number(b.dataset.i), 1); renderReqFiles();
+  });
+  $('reqForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cat = $('reqCat').value, text = $('reqMsg').value.trim();
+    if (!cat) return msg('reqErr', 'Pick what it is.');
+    if (!text) return msg('reqErr', 'Write a few words.');
+    $('reqBtn').disabled = true; msg('reqErr', ''); show($('reqOk'), false);
+    try {
+      const files = [];
+      for (let i = 0; i < reqFiles.length; i++) {
+        $('reqBtn').textContent = `Uploading ${i + 1} of ${reqFiles.length}...`;
+        files.push(await Samdw.upload(reqFiles[i]));
+      }
+      $('reqBtn').textContent = 'Sending...';
+      const r = await Samdw.rpc('submit_request', { p_category: cat, p_message: text, p_anonymous: $('reqAnon').checked, p_files: files });
+      if (r && r.error) return msg('reqErr', r.error);
+      $('reqForm').reset(); reqFiles = []; renderReqFiles(); show($('reqOk'), true);
+    } catch { msg('reqErr', "Couldn't send that. Check your connection and try again."); }
+    finally { $('reqBtn').disabled = false; $('reqBtn').textContent = 'Send to Sam'; }
   });
 
   // ---------- Install tip ----------
