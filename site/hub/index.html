@@ -204,6 +204,16 @@
 
   <div id="tiles" class="hidden"></div>
 
+  <!-- Only for admins (private.admins); the admin page still asks for the PIN -->
+  <section class="win hidden" id="adminWin">
+    <div class="titlebar"><span>Admin</span></div>
+    <div class="body"><a class="tile" href="../admin/">
+      <span class="icon">🛠️</span>
+      <span><div class="name">Admin</div><div class="desc">Inbox, stickers and accounts</div></span>
+      <span class="go" aria-hidden="true">&#9656;</span>
+    </a></div>
+  </section>
+
   <!-- Request / submit: messages and files to Sam -->
   <section class="win hidden" id="request">
     <div class="titlebar"><span>Request / submit</span></div>
@@ -308,6 +318,7 @@
 
   // ---------- Screens ----------
   let me = null;           // { name, first, last, avatar } or null
+  let isAdmin = false;
   let pickSetup = null, pickEdit = null;
   function screen(which) {   // 'signin' | 'setup' | 'home'
     show($('signIn'), which === 'signin');
@@ -315,6 +326,7 @@
     show($('account'), which === 'home');
     show($('tiles'), which === 'home');
     show($('request'), which === 'home');
+    show($('adminWin'), which === 'home' && isAdmin);
     $('main').className = which === 'home' ? 'home' : 'landing';
     showInstall(which === 'home');
   }
@@ -332,6 +344,7 @@
     try { r = await Samdw.rpc('my_profile'); } catch { /* offline */ }
     taken = new Set((r && r.taken) || []);
     me = r && r.profile;
+    isAdmin = !!(r && r.admin);
     if (!me || !me.first || !me.last) {
       // New account: names and icon. Existing profile missing names: names only.
       $('setupTitle').textContent = me ? 'Finish your profile' : 'Make your profile';
