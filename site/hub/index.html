@@ -6,6 +6,11 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#efe9dd">
 <title>PEEN</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/peen-192.png">
+<link rel="apple-touch-icon" href="../icons/peen-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PEEN">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -96,6 +101,27 @@
   .who { padding: 8px 10px 8px 14px; font-size: 13px; }
   footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 30px; letter-spacing: .04em; }
   footer em { font-style: italic; }
+
+  /* Account bar, profile and setup */
+  .avatar { width: 40px; height: 40px; flex: none; display: grid; place-items: center; background: var(--chrome);
+    border: 2px solid; border-color: var(--chrome-hi) var(--chrome-dk) var(--chrome-dk) var(--chrome-hi); }
+  .avatar svg { width: 22px; height: 22px; }
+  .me { display: flex; align-items: center; gap: 10px; }
+  .me .nm { font: 400 14px/1.2 var(--pixel); letter-spacing: .04em; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field + .field, .row2 + .field, .field + .row2 { margin-top: 12px; }
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; margin-top: 6px;
+    max-height: 220px; overflow-y: auto; padding: 6px; background: #fff;
+    border: 2px solid; border-color: var(--chrome-dk) var(--chrome-hi) var(--chrome-hi) var(--chrome-dk); }
+  .icons button { padding: 0; height: 40px; display: grid; place-items: center; }
+  .icons button svg { width: 20px; height: 20px; }
+  .icons button[aria-pressed="true"] { background: var(--bar); border-color: var(--chrome-dk) var(--chrome-hi) var(--chrome-hi) var(--chrome-dk); }
+  .icons button:disabled { opacity: .2; cursor: default; }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; }
+  .btnrow .primary { margin-top: 0; }
+  .ok { color: #2f7a5c; font-size: 12px; margin: 10px 0 0; }
+  .install ol { margin: 8px 0 0; padding-left: 18px; font-size: 12px; }
+  .install li + li { margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -105,24 +131,16 @@
     <p class="tagline">Pals' Ever-Expanding Nonsense</p>
   </div>
 
-  <!-- Signed in -->
-  <section class="win hidden" id="signedIn">
-    <div class="body who">
-      <span>Signed in as <b id="myName">you</b></span>
-      <button class="link" id="signOutBtn">Sign out</button>
-    </div>
-  </section>
-
   <!-- Signed out: email code -->
-  <section class="win hidden" id="signedOut">
+  <section class="win hidden" id="signIn">
     <div class="titlebar"><span>Sign in</span></div>
     <div class="body">
-      <p class="err hidden" id="tapNote" style="margin-top:0;margin-bottom:12px"></p>
+      <p class="note hidden" id="tapNote" style="margin:0 0 12px"></p>
       <form id="emailForm">
         <label for="email">Email</label>
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
         <button class="primary" id="sendBtn" type="submit">Email me a code</button>
-        <p class="note">One sign-in for Robotomy and the games. No password: we email you a 6-digit code. Got a sticker? Just tap it.</p>
+        <p class="note">One sign-in for everything in PEEN. No password: we email you a 6-digit code. Got a sticker? Just tap it.</p>
       </form>
       <form id="codeForm" class="hidden">
         <label for="code">Code sent to <span id="sentTo"></span></label>
@@ -134,11 +152,62 @@
     </div>
   </section>
 
+  <!-- Signed in, no profile yet (or missing names): set up -->
+  <section class="win hidden" id="setup">
+    <div class="titlebar"><span id="setupTitle">Make your profile</span></div>
+    <div class="body">
+      <p class="note" style="margin:0 0 12px" id="setupNote">Everyone sees your first name and last initial, like "Sam W".</p>
+      <form id="setupForm">
+        <div class="row2">
+          <div><label for="sFirst">First name</label><input id="sFirst" maxlength="24" autocomplete="given-name" required></div>
+          <div><label for="sLast">Last name</label><input id="sLast" maxlength="40" autocomplete="family-name" required></div>
+        </div>
+        <div class="field" id="sIconField"><label>Pick an icon</label><div class="icons" id="sIcons"></div></div>
+        <button class="primary" id="setupBtn" type="submit">Let me in</button>
+        <p class="err hidden" id="setupErr"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Signed in -->
+  <section class="win hidden" id="account">
+    <div class="titlebar"><span>You</span></div>
+    <div class="body">
+      <div class="who" style="padding:0">
+        <span class="me"><span class="avatar" id="myIcon"></span><span class="nm" id="myName">you</span></span>
+        <button class="link" id="editBtn" type="button">Edit profile</button>
+      </div>
+      <form id="profileForm" class="hidden" style="margin-top:14px">
+        <div class="row2">
+          <div><label for="pFirst">First name</label><input id="pFirst" maxlength="24" autocomplete="given-name" required></div>
+          <div><label for="pLast">Last name</label><input id="pLast" maxlength="40" autocomplete="family-name" required></div>
+        </div>
+        <div class="field"><label>Icon</label><div class="icons" id="pIcons"></div></div>
+        <div class="btnrow">
+          <button class="primary" id="saveBtn" type="submit">Save</button>
+          <button id="signOutBtn" type="button">Sign out</button>
+        </div>
+        <p class="err hidden" id="profileErr"></p>
+        <p class="ok hidden" id="profileOk">Saved.</p>
+      </form>
+    </div>
+  </section>
+
   <div id="tiles" class="hidden"></div>
+
+  <!-- Home-screen install tip (hidden once installed) -->
+  <section class="win hidden install" id="install">
+    <div class="titlebar"><span>Add PEEN to your home screen</span></div>
+    <div class="body">
+      <ol id="installSteps"></ol>
+      <button class="link" id="installHide" type="button" style="margin-top:8px">Hide</button>
+    </div>
+  </section>
 
   <footer data-peen-footer>powered by PEEN-<em>IS</em></footer>
 </main>
 
+<script src="../avatars.js"></script>
 <script src="../shared.js"></script>
 <script>
 (() => {
@@ -146,14 +215,24 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const show = (el, on) => el.classList.toggle('hidden', !on);
-  const err = (text) => { $('authErr').textContent = text || ''; show($('authErr'), !!text); };
+  const msg = (id, text) => { $(id).textContent = text || ''; show($(id), !!text); };
+  const AVATARS = window.PEEN_AVATARS || [];
+  const svgFor = (id) => (AVATARS.find((a) => a.id === id) || {}).svg || '';
 
-  // Tiles come from config.json "apps" so adding a game is one line there.
+  // Where to go after signing in: ?next=<url on *.samdw.ca> (Robotomy sends
+  // people here to sign in or set up, then they go straight back).
+  const nextUrl = (() => {
+    try {
+      const n = new URL(new URLSearchParams(location.search).get('next') || '', location.href);
+      return /(^|\.)samdw\.ca$/.test(n.hostname) && n.protocol === 'https:' ? n.href : null;
+    } catch { return null; }
+  })();
+
+  // ---------- Tiles ----------
   const DEFAULT_APPS = [
     { section: 'Games', name: 'Snuske', desc: "Eat the pouches. Get longer. Don't bite yourself.", icon: '🐍', href: 'snuske/' },
-    { section: 'Robotomy', name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/' },
+    { section: 'Robotomy', name: 'Robotomy', desc: 'Personality tests, deeply unserious', icon: '🤖', href: 'https://robotomy.samdw.ca/?via=peen' },
   ];
-  // Grouped by "section" (Games, Robotomy, ...), in the order they first appear.
   function renderTiles(apps) {
     const sections = [];
     for (const a of apps) {
@@ -172,53 +251,162 @@
     </section>`).join('');
   }
 
-  async function renderAccount() {
+  // ---------- Icon picker ----------
+  let taken = new Set();
+  function renderIcons(box, selected, onPick) {
+    box.innerHTML = AVATARS.map((a) => `<button type="button" data-id="${a.id}" aria-label="${a.id}"
+      aria-pressed="${a.id === selected}" ${taken.has(a.id) ? 'disabled' : ''}>${a.svg}</button>`).join('');
+    box.onclick = (e) => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      onPick(b.dataset.id);
+    };
+    const sel = box.querySelector('[aria-pressed="true"]'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ---------- Screens ----------
+  let me = null;           // { name, first, last, avatar } or null
+  let pickSetup = null, pickEdit = null;
+  function screen(which) {   // 'signin' | 'setup' | 'home'
+    show($('signIn'), which === 'signin');
+    show($('setup'), which === 'setup');
+    show($('account'), which === 'home');
+    show($('tiles'), which === 'home');
+    $('main').className = which === 'home' ? 'home' : 'landing';
+    showInstall(which === 'home');
+  }
+
+  async function load() {
     const s = await Samdw.session();
-    show($('signedIn'), !!s);
-    show($('signedOut'), !s);
-    show($('tiles'), !!s);
-    $('main').className = s ? 'home' : 'landing';
-    if (s) {
-      $('myName').textContent = s.user.email;
-      try { const me = await Samdw.rpc('my_player'); if (me && me.name) $('myName').textContent = me.name; } catch { /* keep email */ }
-    } else {
+    if (!s) {
       const note = Samdw.tapResult === 'unlinked'
         ? "That sticker isn't linked to anyone yet. Sign in once and it becomes yours: after that, a tap signs you straight in."
         : Samdw.tapResult === 'off' ? 'That sticker has been turned off. Sign in with your email instead.' : '';
-      $('tapNote').textContent = note; show($('tapNote'), !!note);
-      $('tapNote').style.color = Samdw.tapResult === 'unlinked' ? 'var(--muted)' : '';
+      msg('tapNote', note);
+      return screen('signin');
     }
+    let r = null;
+    try { r = await Samdw.rpc('my_profile'); } catch { /* offline */ }
+    taken = new Set((r && r.taken) || []);
+    me = r && r.profile;
+    if (!me || !me.first || !me.last) {
+      // New account: names and icon. Existing profile missing names: names only.
+      $('setupTitle').textContent = me ? 'Finish your profile' : 'Make your profile';
+      $('setupNote').textContent = me
+        ? `Names are now first name and last initial, like "Sam W". You're ${me.name} for now.`
+        : 'Everyone sees your first name and last initial, like "Sam W".';
+      $('sFirst').value = (me && me.first) || ''; $('sLast').value = (me && me.last) || '';
+      show($('sIconField'), !me);
+      if (!me) { pickSetup = null; renderIcons($('sIcons'), null, (id) => { pickSetup = id; }); }
+      return screen('setup');
+    }
+    if (nextUrl) return location.replace(nextUrl);
+    $('myIcon').innerHTML = svgFor(me.avatar);
+    $('myName').textContent = me.name;
+    screen('home');
   }
 
+  // ---------- Sign in ----------
   $('emailForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    $('sendBtn').disabled = true; err('');
+    $('sendBtn').disabled = true; msg('authErr', '');
     const problem = await Samdw.sendCode($('email').value);
     $('sendBtn').disabled = false;
-    if (problem) return err(problem);
+    if (problem) return msg('authErr', problem);
     $('sentTo').textContent = $('email').value.trim();
     show($('emailForm'), false); show($('codeForm'), true); $('code').focus();
   });
   $('codeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    $('verifyBtn').disabled = true; err('');
+    $('verifyBtn').disabled = true; msg('authErr', '');
     const problem = await Samdw.verifyCode($('email').value, $('code').value);
     $('verifyBtn').disabled = false;
-    if (problem) { $('code').value = ''; return err(problem); }
+    if (problem) { $('code').value = ''; return msg('authErr', problem); }
     show($('codeForm'), false); show($('emailForm'), true);
-    renderAccount();
+    load();
   });
-  $('backBtn').addEventListener('click', () => { show($('codeForm'), false); show($('emailForm'), true); err(''); });
-  $('signOutBtn').addEventListener('click', async () => { await Samdw.signOut(); renderAccount(); });
+  $('backBtn').addEventListener('click', () => { show($('codeForm'), false); show($('emailForm'), true); msg('authErr', ''); });
 
+  // ---------- Setup ----------
+  $('setupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = $('sFirst').value.trim(), l = $('sLast').value.trim();
+    if (!f || !l) return msg('setupErr', 'First and last name, please.');
+    if (!me && !pickSetup) return msg('setupErr', 'Pick an icon.');
+    $('setupBtn').disabled = true; msg('setupErr', '');
+    try {
+      const r = me ? await Samdw.rpc('set_my_name', { p_first: f, p_last: l })
+                   : await Samdw.rpc('create_my_profile', { p_first: f, p_last: l, p_avatar: pickSetup });
+      if (r && r.error) { msg('setupErr', r.error); if (/icon/.test(r.error)) load(); return; }
+      await load();
+    } catch { msg('setupErr', 'Network error. Try again.'); }
+    finally { $('setupBtn').disabled = false; }
+  });
+
+  // ---------- Edit profile ----------
+  $('editBtn').addEventListener('click', () => {
+    const open = $('profileForm').classList.contains('hidden');
+    show($('profileForm'), open);
+    $('editBtn').textContent = open ? 'Close' : 'Edit profile';
+    if (open) {
+      $('pFirst').value = me.first; $('pLast').value = me.last; pickEdit = me.avatar;
+      msg('profileErr', ''); show($('profileOk'), false);
+      renderIcons($('pIcons'), me.avatar, (id) => { pickEdit = id; });
+    }
+  });
+  $('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = $('pFirst').value.trim(), l = $('pLast').value.trim();
+    if (!f || !l) return msg('profileErr', 'First and last name, please.');
+    $('saveBtn').disabled = true; msg('profileErr', ''); show($('profileOk'), false);
+    try {
+      if (f !== me.first || l !== me.last) {
+        const r = await Samdw.rpc('set_my_name', { p_first: f, p_last: l });
+        if (r && r.error) return msg('profileErr', r.error);
+      }
+      if (pickEdit && pickEdit !== me.avatar) {
+        const r = await Samdw.rpc('set_my_avatar', { p_avatar: pickEdit });
+        if (r && r.error) return msg('profileErr', r.error);
+      }
+      await load();
+      show($('profileForm'), true); show($('profileOk'), true);
+    } catch { msg('profileErr', 'Network error. Try again.'); }
+    finally { $('saveBtn').disabled = false; }
+  });
+  $('signOutBtn').addEventListener('click', async () => {
+    await Samdw.signOut(); me = null;
+    show($('profileForm'), false); $('editBtn').textContent = 'Edit profile';
+    load();
+  });
+
+  // ---------- Install tip ----------
+  const HIDE_KEY = 'peen.installHidden';
+  const installed = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch { return false; } };
+  function showInstall(on) {
+    let hidden = false; try { hidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* ignore */ }
+    if (!on || hidden || installed()) return show($('install'), false);
+    const ua = navigator.userAgent;
+    const steps = /iPhone|iPad|iPod/.test(ua) ? [
+      'Open this page in <b>Safari</b>.', 'Tap <b>Share</b> (the square with an arrow).',
+      'Tap <b>Add to Home Screen</b>, then <b>Add</b>.', 'Open PEEN from the new icon and sign in there once.',
+    ] : /Android/.test(ua) ? [
+      'Open this page in <b>Chrome</b>.', 'Tap the <b>&#8942;</b> menu.', 'Tap <b>Add to Home screen</b> or <b>Install app</b>.',
+    ] : ['On your phone, open tap.samdw.ca and add it to your home screen.'];
+    $('installSteps').innerHTML = steps.map((s) => `<li>${s}</li>`).join('');
+    show($('install'), true);
+  }
+  $('installHide').addEventListener('click', () => { try { localStorage.setItem(HIDE_KEY, '1'); } catch { /* ignore */ } show($('install'), false); });
+
+  // ---------- Boot ----------
   (async () => {
     const cfg = await Samdw.config;
     renderTiles((Array.isArray(cfg.apps) && cfg.apps.length ? cfg.apps : DEFAULT_APPS).filter((a) => a.href));
     if (!(await Samdw.online)) {
-      $('main').className = 'home'; // offline: games still play, nothing to sign in to
-      return err('Offline right now. The games still work; sign in when you are back online.');
+      // Offline: games still play; nothing to sign in to.
+      screen('home'); show($('account'), false);
+      return;
     }
-    renderAccount();
+    load();
   })();
 })();
 </script>
