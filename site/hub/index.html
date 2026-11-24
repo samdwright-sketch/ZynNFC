@@ -56,6 +56,7 @@
         </div>
         <div class="field" id="sIconField"><label>Pick an icon</label><div class="icons" id="sIcons"></div></div>
         <button class="primary" id="setupBtn" type="submit">Let me in</button>
+        <button class="link" id="wrongEmailBtn" type="button" style="margin-top:8px">Wrong email? Go back</button>
         <p class="err hidden" id="setupErr"></p>
       </form>
     </div>
@@ -210,6 +211,8 @@
         : 'Everyone sees your first name and last initial, like "Sam W".';
       $('sFirst').value = (me && me.first) || ''; $('sLast').value = (me && me.last) || '';
       show($('sIconField'), !me);
+      // a brand-new account can be undone; one with a profile can only sign out
+      $('wrongEmailBtn').textContent = me ? 'Not you? Sign out' : 'Wrong email? Go back';
       if (!me) { pickSetup = null; renderIcons($('sIcons'), null, (id) => { pickSetup = id; }); }
       return screen('setup');
     }
@@ -254,6 +257,25 @@
       await load();
     } catch { msg('setupErr', 'Network error. Try again.'); }
     finally { $('setupBtn').disabled = false; }
+  });
+
+  /* Signed in with the wrong address: remove the empty account just made
+     (cancel_new_signup refuses anything with a profile or data in it), sign
+     out, and go back to the email box. */
+  $('wrongEmailBtn').addEventListener('click', async () => {
+    $('wrongEmailBtn').disabled = true; msg('setupErr', '');
+    try {
+      if (!me) {
+        const r = await Samdw.rpc('cancel_new_signup');
+        if (r && r.error) { msg('setupErr', r.error); return; }
+      }
+      await Samdw.signOut(); me = null;
+      $('email').value = ''; $('code').value = '';
+      show($('codeForm'), false); show($('emailForm'), true);
+      await load();
+      $('email').focus();
+    } catch { msg('setupErr', 'Network error. Try again.'); }
+    finally { $('wrongEmailBtn').disabled = false; }
   });
 
   // ---------- Edit profile ----------
