@@ -158,6 +158,12 @@
   .board li { border-radius: 0; font-family: var(--mono); font-size: 14px; }
   .badge { border-radius: 0; font-family: var(--pixel); font-weight: 400; }
   .hud-btn { border-radius: 0; background: var(--chrome); border: 2px solid; border-color: var(--chrome-hi) var(--chrome-lo) var(--chrome-lo) var(--chrome-hi); }
+  /* Back to the hub: top-left on the menu, and a button after a game. */
+  .back-hub { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); z-index: 5;
+    font-family: var(--pixel); font-size: 13px; letter-spacing: .12em; color: var(--ink); text-decoration: none; padding: 6px 10px;
+    background: var(--chrome); border: 2px solid; border-color: var(--chrome-hi) var(--chrome-lo) var(--chrome-lo) var(--chrome-hi); }
+  .hub-btn { display: inline-block; text-decoration: none; }
+  #menu.screen { padding-top: calc(58px + env(safe-area-inset-top)); }
   .peen-link { font-family: var(--pixel); margin-top: 26px; }
   .peen-footer { font-family: var(--mono); }
 </style>
@@ -178,6 +184,7 @@
 </div>
 
 <section id="menu" class="screen">
+<a class="back-hub" href="../hub/" aria-label="Back to the PEEN hub">&larr; PEEN</a>
   <div class="logo">
     <svg viewBox="0 0 64 44" aria-hidden="true"><rect x="3" y="3" width="58" height="38" rx="14" fill="#f4efe6" stroke="#c9bfae" stroke-width="3"/><path d="M14 22h36" stroke="#ddd3c2" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6"/></svg>
     <h1>SNUSKE</h1>
@@ -193,7 +200,6 @@
   <div class="help">Drag anywhere to steer</div>
   </div>
 </div>
-<a class="peen-link" href="../hub/">&larr; PEEN</a>
 <div class="peen-footer" data-peen-footer>powered by PEEN-<em>IS</em></div>
 </section>
 
@@ -221,6 +227,7 @@
   <div class="rank-line" id="rankLine"></div>
   <button class="btn" id="againBtn">PLAY AGAIN</button>
   <button class="btn ghost" id="shareBtn">SHARE SCORE</button>
+  <a class="btn ghost hub-btn" href="../hub/">BACK TO PEEN</a>
   <div class="best-line">BEST <b id="finalBest">0</b></div>
   <div class="board hidden" id="overBoard"><h3>LEADERBOARD</h3><ol></ol></div>
   </div>
