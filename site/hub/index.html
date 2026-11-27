@@ -101,12 +101,27 @@
   <!-- Request / submit lives on its own page -->
   <a class="reqlink hidden" id="request" href="../request/">&#9993; Request / submit something to Sam</a>
 
-  <!-- Home-screen install tip (hidden once installed) -->
-  <section class="win hidden install" id="install">
-    <div class="titlebar"><span>Add PEEN to your home screen</span></div>
+  <!-- Two small buttons: install help (expands) and copy-the-link -->
+  <div class="minirow hidden" id="miniRow">
+    <button type="button" id="installBtn" aria-expanded="false" aria-controls="installPanel">&#10133; Add to Home Screen</button>
+    <button type="button" id="giveBtn">&#127873; Give PEEN</button>
+  </div>
+  <section class="win hidden install" id="installPanel">
+    <div class="titlebar"><span>Add PEEN to your Home Screen</span></div>
     <div class="body">
-      <ol id="installSteps"></ol>
-      <button class="link" id="installHide" type="button" style="margin-top:8px">Hide</button>
+      <h2>iPhone (Safari)</h2>
+      <ol>
+        <li>Open this page in <b>Safari</b>.</li>
+        <li>Tap <b>Share</b> (the square with an arrow).</li>
+        <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+        <li>Open PEEN from the new icon and sign in there once.</li>
+      </ol>
+      <h2>Android (Chrome)</h2>
+      <ol>
+        <li>Open this page in <b>Chrome</b>.</li>
+        <li>Tap the <b>&#8942;</b> menu.</li>
+        <li>Tap <b>Add to Home screen</b> or <b>Install app</b>.</li>
+      </ol>
     </div>
   </section>
 
@@ -314,23 +329,37 @@
     load();
   });
 
-  // ---------- Install tip ----------
-  const HIDE_KEY = 'peen.installHidden';
+  // ---------- Home Screen buttons ----------
   const installed = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch { return false; } };
   function showInstall(on) {
-    let hidden = false; try { hidden = localStorage.getItem(HIDE_KEY) === '1'; } catch { /* ignore */ }
-    if (!on || hidden || installed()) return show($('install'), false);
-    const ua = navigator.userAgent;
-    const steps = /iPhone|iPad|iPod/.test(ua) ? [
-      'Open this page in <b>Safari</b>.', 'Tap <b>Share</b> (the square with an arrow).',
-      'Tap <b>Add to Home Screen</b>, then <b>Add</b>.', 'Open PEEN from the new icon and sign in there once.',
-    ] : /Android/.test(ua) ? [
-      'Open this page in <b>Chrome</b>.', 'Tap the <b>&#8942;</b> menu.', 'Tap <b>Add to Home screen</b> or <b>Install app</b>.',
-    ] : ['On your phone, open tap.samdw.ca and add it to your home screen.'];
-    $('installSteps').innerHTML = steps.map((s) => `<li>${s}</li>`).join('');
-    show($('install'), true);
+    show($('miniRow'), on);
+    show($('installBtn'), !installed());   // already on the Home Screen: only "Give PEEN" left
+    if (!on) { show($('installPanel'), false); $('installBtn').setAttribute('aria-expanded', 'false'); }
   }
-  $('installHide').addEventListener('click', () => { try { localStorage.setItem(HIDE_KEY, '1'); } catch { /* ignore */ } show($('install'), false); });
+  $('installBtn').addEventListener('click', () => {
+    const open = $('installPanel').classList.contains('hidden');
+    show($('installPanel'), open);
+    $('installBtn').setAttribute('aria-expanded', String(open));
+    if (open) $('installPanel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch { /* fall through */ }
+    try {   // older browsers / non-secure contexts
+      const t = document.createElement('textarea');
+      t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;opacity:0';
+      document.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy'); t.remove(); return ok;
+    } catch { return false; }
+  }
+  let giveTimer = 0;
+  $('giveBtn').addEventListener('click', async () => {
+    const link = new URL(Samdw.root).origin + '/';   // the plain PEEN address, never a sticker's ?t=
+    const ok = await copyText(link);
+    const b = $('giveBtn');
+    b.innerHTML = ok ? '&#10003; Link copied!' : esc(link);
+    clearTimeout(giveTimer);
+    giveTimer = setTimeout(() => { b.innerHTML = '&#127873; Give PEEN'; }, ok ? 2200 : 6000);
+  });
 
   // ---------- Boot ----------
   (async () => {
