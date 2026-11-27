@@ -18,13 +18,13 @@
 </head>
 <body>
 <div class="dot" aria-label="Loading"></div>
-<noscript><p>This page needs JavaScript. <a href="snuske/">Open the game</a></p></noscript>
+<noscript><p>This page needs JavaScript. <a href="hub/">Open PEEN</a></p></noscript>
 <script>
   // NFC tags point here (e.g. https://tap.samdw.ca/?t=abc123).
   // config.json "go" decides where taps land, so stickers never need rewriting.
   (async () => {
     const t = new URLSearchParams(location.search).get('t');
-    let go = 'snuske/';
+    let go = 'hub/';
     try {
       const res = await fetch('config.json', { cache: 'no-store' });
       const c = await res.json();

@@ -218,3 +218,24 @@ grant execute on function
   public.admin_status(), public.admin_setup(text), public.admin_create_tag(text, text),
   public.admin_list_tags(text), public.admin_rename_tag(text, text, text), public.admin_delete_tag(text, text)
   to anon, authenticated;
+
+-- ---------- Keep-alive heartbeat ----------
+-- Free Supabase projects pause without "a few user requests to the database
+-- each day". The keepalive workflow calls this (a real write) several times a day.
+create table if not exists private.heartbeat (
+  id    int primary key default 1 check (id = 1),
+  beats bigint not null default 0,
+  at    timestamptz not null default now()
+);
+insert into private.heartbeat (id) values (1) on conflict (id) do nothing;
+
+create or replace function public.keepalive()
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare r private.heartbeat;
+begin
+  update private.heartbeat set beats = beats + 1, at = now() where id = 1 returning * into r;
+  return jsonb_build_object('beats', r.beats, 'at', r.at);
+end $$;
+
+revoke all on function public.keepalive() from public;
+grant execute on function public.keepalive() to anon, authenticated;

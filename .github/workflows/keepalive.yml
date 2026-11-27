@@ -1,14 +1,22 @@
 name: Keep leaderboard database awake
 
-# Free Supabase projects pause after 7 days without activity.
-# This makes one tiny read twice a week so the leaderboard never goes to sleep.
+# Free Supabase projects pause unless they get "a few user requests to the
+# database each day" (Supabase docs). This runs 4 times a day and each run
+# writes a heartbeat row and reads the leaderboard.
+#
+# GitHub also turns off scheduled workflows in public repos after 60 days
+# with no commits. The last step re-enables this workflow on every run, so it
+# keeps going even if nobody touches the repo for months.
+#
+# If a ping fails, the run fails and GitHub emails you.
 on:
   schedule:
-    - cron: "17 15 * * 1,4" # Mondays and Thursdays, 15:17 UTC
+    - cron: "23 1,7,13,19 * * *" # 4x a day at :23 past 01, 07, 13, 19 UTC (GitHub may start it late)
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: write # needed only to re-enable this workflow
 
 jobs:
   ping:
@@ -24,8 +32,25 @@ jobs:
             echo "Supabase not configured in site/config.json yet; nothing to ping."
             exit 0
           fi
-          curl -fsS -X POST "${URL%/}/rest/v1/rpc/leaderboard" \
-            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-            -H "Content-Type: application/json" -d '{"p_limit": 1}'
-          echo
-          echo "Database is awake."
+          rpc() {
+            curl -fsS --max-time 30 -X POST "${URL%/}/rest/v1/rpc/$1" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+              -H "Content-Type: application/json" -d "$2"
+          }
+          for attempt in 1 2 3; do
+            if rpc keepalive '{}' && echo && rpc leaderboard '{"p_limit": 1}'; then
+              echo
+              echo "Database is awake."
+              exit 0
+            fi
+            echo "Attempt $attempt failed; retrying in 30s..."
+            sleep 30
+          done
+          echo "::error::Supabase did not respond. It may be paused: restore it at https://supabase.com/dashboard/project/$(echo "$URL" | sed -E 's#https://([^.]+)\..*#\1#')"
+          exit 1
+
+      - name: Stop GitHub from auto-disabling this schedule
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/keepalive.yml/enable" && echo "Schedule kept enabled."
