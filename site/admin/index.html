@@ -152,6 +152,8 @@
         <input type="text" id="name" maxlength="24" autocomplete="off" placeholder="e.g. Sam">
         <button id="createBtn">Create</button>
       </div>
+      <label for="newEmail">Their email (optional, even if they have not signed up yet)</label>
+      <input type="email" id="newEmail" list="acctList" autocomplete="off" placeholder="name@example.com">
       <div class="msg" id="createMsg"></div>
       <div class="result hidden" id="result">
         <div class="name" id="resName"></div>
@@ -206,11 +208,18 @@
 
   let accounts = [];
   function accountPicker() {
-    return `<select data-role="acct"><option value="">Link to account...</option>${accounts.map((a) =>
-      `<option value="${esc(a.email)}">${esc(a.name)} (${esc(a.email)})</option>`).join('')}</select>`;
+    // A text box with suggestions: pick someone who has signed in, or type an email that has not signed up yet.
+    return `<input type="email" data-role="acct" list="acctList" placeholder="Email (pick or type)" autocomplete="off">`;
+  }
+
+  function renderAcctList() {
+    let dl = $('acctList');
+    if (!dl) { dl = document.createElement('datalist'); dl.id = 'acctList'; document.body.appendChild(dl); }
+    dl.innerHTML = accounts.map((a) => `<option value="${esc(a.email)}">${esc(a.name)}</option>`).join('');
   }
 
   function renderTags(tags) {
+    renderAcctList();
     $('count').textContent = tags.length;
     $('tags').innerHTML = tags.length ? tags.map((t) => `
       <li data-tag="${esc(t.tag)}" data-name="${esc(t.name)}"${t.revoked ? ' style="opacity:.55"' : ''}>
@@ -219,13 +228,15 @@
         <div class="url">${esc(tagUrl(t.tag))}</div>
         <div class="meta">${t.account
           ? `Signs in as <b>${esc(t.account_name)}</b> (${esc(t.account)})`
-          : 'Not linked: the first person to sign in after tapping it claims it'}</div>
+          : t.pending_email
+            ? `Reserved for <b>${esc(t.pending_email)}</b>: links itself when they sign up`
+            : 'Not linked: the first person to sign in after tapping it claims it'}</div>
         <div class="actions">
           <button class="ghost small" data-act="copy">Copy URL</button>
           <button class="ghost small" data-act="rename">Rename</button>
           ${t.account
             ? '<button class="ghost small" data-act="unlink">Unlink</button>'
-            : `${accountPicker()}<button class="ghost small" data-act="link">Link</button>`}
+            : `${t.pending_email ? '<button class="ghost small" data-act="unlink">Clear reservation</button>' : ''}${accountPicker()}<button class="ghost small" data-act="link">${t.pending_email ? 'Change' : 'Link'}</button>`}
           <button class="ghost small" data-act="${t.revoked ? 'on' : 'off'}">${t.revoked ? 'Turn on' : 'Turn off'}</button>
           <button class="ghost small" data-act="reissue">Replace</button>
           <button class="danger small" data-act="delete">Delete</button>
@@ -330,6 +341,13 @@
     try {
       const r = await Samdw.rpc('admin_create_tag', { p_pin: pin, p_name: name });
       if (r.error) return msg('createMsg', r.error);
+      const email = $('newEmail').value.trim();
+      if (email) {
+        const l = await Samdw.rpc('admin_link_tag', { p_pin: pin, p_tag: r.tag, p_email: email });
+        if (l.error) msg('createMsg', `Tag created, but not linked: ${l.error}`);
+        else msg('createMsg', l.pending ? `Reserved for ${email}: links when they sign up.` : `Linked to ${email}.`, true);
+        $('newEmail').value = '';
+      }
       $('resName').textContent = r.name;
       $('resUrl').textContent = tagUrl(r.tag);
       $('result').classList.remove('hidden');
@@ -359,9 +377,10 @@
       return r;
     };
     if (btn.dataset.act === 'link') {
-      const email = li.querySelector('[data-role="acct"]').value;
-      if (!email) return alert('Pick an account first.');
-      await act('admin_link_tag', { p_email: email });
+      const email = li.querySelector('[data-role="acct"]').value.trim();
+      if (!email) return alert('Enter an email first.');
+      const r = await act('admin_link_tag', { p_email: email });
+      if (r.pending) alert(`${email} has not signed up yet. The sticker is reserved and links itself when they do.`);
       return refresh();
     }
     if (btn.dataset.act === 'unlink') {
